@@ -165,13 +165,14 @@ return [{
 
 ### CV Generation Config (`n8n-nodes-base.set`)
 
-A plain values node — no logic, just a constant read by a later node.
+A plain values node — no logic, just constants read by later nodes.
 
-Setup — add this field (Edit Fields / Set node):
+Setup — add these fields (Edit Fields / Set node, one assignment each):
 
 | Field | Type | Value | What it's for |
 |---|---|---|---|
 | `cv_tailor_threshold` | Number | `30` | Minimum AI match score (0–100) to bother tailoring a CV |
+| `cv_owner_name` | String | your name | Used in the generated PDF's filename |
 
 ### Download cv.tex (`n8n-nodes-base.googleDrive`)
 
@@ -1373,7 +1374,8 @@ const sanitize = (s) => s
   .replace(/[\\/:*?"<>|]/g, '')
   .replace(/\s+/g, ' ');
 
-const fileName = `${sanitize(jobTitle)}-${sanitize(company)}.pdf`;
+const ownerName = ($('CV Generation Config').first().json.cv_owner_name || 'Candidate').trim();
+const fileName = `${sanitize(ownerName)}- ${sanitize(jobTitle)}-${sanitize(company)}.pdf`;
 
 return [{
   json: { success: true },

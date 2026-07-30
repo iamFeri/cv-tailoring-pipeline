@@ -53,6 +53,9 @@ literal from-scratch build sequence.
      history.
    - [`templates/CV2_placeholders.tex`](./templates/CV2_placeholders.tex) —
      replace the example header/education/experience with your own.
+   - The `CV Generation Config` node (once imported, step 4) — set
+     `cv_owner_name` to your own name; it's used in the generated PDF's
+     filename.
 3. **Stand up the infrastructure:** self-hosted n8n, a self-hosted service
    that compiles LaTeX to PDF ([`latex-api/`](./latex-api/) in this repo is
    a working example — start at

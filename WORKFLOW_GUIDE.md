@@ -103,10 +103,11 @@ never inlined as raw secrets)
 12. **Your own CV LaTeX template** — same `<<TOKEN>>` / `<<TOKEN:MAXLEN>>` placeholder
     contract, with `\jobentry{Title}{Company}{Dates}` calls for however many roles you
     want tailored (format spec in §5).
-13. Edit the `CV Generation Config` node's `cv_tailor_threshold` (score gate — the
+13. Edit the `CV Generation Config` node: `cv_tailor_threshold` (score gate — the
     shipped value of 30 is an untested placeholder even for the original build,
     calibrated for a different scoring mechanism entirely; don't assume it means
-    anything for a different bank/domain).
+    anything for a different bank/domain) and `cv_owner_name` (used in the generated
+    PDF's filename).
 14. Point every Drive/Sheets node at your own file IDs and spreadsheet IDs — these are
     hardcoded per-user setup, not hidden logic.
 
