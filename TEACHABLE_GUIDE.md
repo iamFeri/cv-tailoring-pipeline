@@ -165,16 +165,13 @@ return [{
 
 ### CV Generation Config (`n8n-nodes-base.set`)
 
-A plain values node — no logic, just constants read by later nodes.
+A plain values node — no logic, just a constant read by a later node.
 
-Setup — add these fields (Edit Fields / Set node, one assignment each):
+Setup — add this field (Edit Fields / Set node):
 
 | Field | Type | Value | What it's for |
 |---|---|---|---|
 | `cv_tailor_threshold` | Number | `30` | Minimum AI match score (0–100) to bother tailoring a CV |
-| `cv_owner_name` | String | your name | Used in the generated PDF's filename |
-| `forced_skills_line_index` | Number | `3` | Which skills line (1/2/3) the forced skills below get pinned into |
-| `forced_skills_json` | String (expression) | `=["Skill A", "Skill B"]` | Skills always included, e.g. an automation-tooling skill you want on every CV. Set to `"[]"` to disable forcing entirely. |
 
 ### Download cv.tex (`n8n-nodes-base.googleDrive`)
 
@@ -1141,9 +1138,6 @@ function escapeLatexPhrase(str) {
   return String(str).replace(/([%&_#{}$])/g, '\\$1');
 }
 
-const cfgNode = $('CV Generation Config').first().json;
-const CONSTANT_SKILLS = JSON.parse(cfgNode.forced_skills_json || '[]').map(escapeLatexPhrase);
-const CONSTANT_LINE_INDEX = cfgNode.forced_skills_line_index || null;
 const SEP = ' \\;|\\; ';
 const SEP_VISUAL_LENGTH = 3;
 
@@ -1154,17 +1148,7 @@ for (const slot of skillsLineSlots) {
   }
 }
 
-const constantsLength = CONSTANT_SKILLS.reduce((sum, s, i) => sum + s.length + (i > 0 ? SEP_VISUAL_LENGTH : 0), 0);
-
-const bins = skillsLineSlots.map(slot => {
-  if (CONSTANT_SKILLS.length > 0 && slot.lineIndex === CONSTANT_LINE_INDEX) {
-    if (constantsLength > slot.maxLength) {
-      throw new Error(`Line ${CONSTANT_LINE_INDEX}'s constants (${constantsLength} chars) exceed its max (${slot.maxLength}).`);
-    }
-    return { slot, capacity: slot.maxLength, used: constantsLength, items: [{ text: CONSTANT_SKILLS.join(SEP), isConstant: true, originalIndex: -1, priority: -1 }] };
-  }
-  return { slot, capacity: slot.maxLength, used: 0, items: [] };
-});
+const bins = skillsLineSlots.map(slot => ({ slot, capacity: slot.maxLength, used: 0, items: [] }));
 
 const items = parsed.skill_candidates
   .sort((a, b) => a.priority - b.priority)
@@ -1195,9 +1179,7 @@ if (dropped.length > 0) {
 
 const skillsLines = {};
 for (const bin of bins) {
-  const constants = bin.items.filter(i => i.isConstant);
-  const fillers = bin.items.filter(i => !i.isConstant).sort((a, b) => a.originalIndex - b.originalIndex);
-  skillsLines[bin.slot.name] = [...constants, ...fillers].map(i => i.text).join(SEP);
+  skillsLines[bin.slot.name] = bin.items.map(i => i.text).join(SEP);
 }
 for (const [name, value] of Object.entries(skillsLines)) {
   allFields[name] = value;
@@ -1391,8 +1373,7 @@ const sanitize = (s) => s
   .replace(/[\\/:*?"<>|]/g, '')
   .replace(/\s+/g, ' ');
 
-const ownerName = ($('CV Generation Config').first().json.cv_owner_name || 'Candidate').trim();
-const fileName = `${sanitize(ownerName)}- ${sanitize(jobTitle)}-${sanitize(company)}.pdf`;
+const fileName = `${sanitize(jobTitle)}-${sanitize(company)}.pdf`;
 
 return [{
   json: { success: true },

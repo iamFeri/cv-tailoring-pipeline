@@ -53,11 +53,6 @@ literal from-scratch build sequence.
      history.
    - [`templates/CV2_placeholders.tex`](./templates/CV2_placeholders.tex) —
      replace the example header/education/experience with your own.
-   - The `CV Generation Config` node (once imported, step 4) — set
-     `cv_owner_name` to your own name, and check `forced_skills_json`. It
-     ships disabled (`[]`); it's an optional way to always pin 1-2 fixed
-     skills onto a specific skills line regardless of what the AI selects —
-     leave it empty unless you specifically want that.
 3. **Stand up the infrastructure:** self-hosted n8n, a self-hosted service
    that compiles LaTeX to PDF ([`latex-api/`](./latex-api/) in this repo is
    a working example — start at
