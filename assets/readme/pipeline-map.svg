@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1500" height="440" viewBox="0 0 1500 440"
+     role="img" aria-labelledby="map-title map-desc"
+     font-family="'Montserrat', 'Segoe UI', Arial, sans-serif">
+  <title id="map-title">The pipeline, as connected pieces</title>
+  <desc id="map-desc">Six macro sub-workflows shown as connected pieces: Load Bank/Template/Config, Search LinkedIn for Job Postings, Fetch Job and Skip Duplicates, AI Scoring and Content Selection, Build and Compile Tailored CV, Deliver Result — with a Gemini Retry/Backoff branch off AI Scoring, and a per-job loop routed back from Deliver to Fetch. Full node-by-node detail for all nine real workflow sections is in TEACHABLE_GUIDE.md.</desc>
+
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0D1B2A"/>
+      <stop offset="100%" stop-color="#1B263B"/>
+    </linearGradient>
+    <pattern id="dotgrid" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="1.5" cy="1.5" r="1.2" fill="#415A77" opacity="0.35"/>
+    </pattern>
+    <marker id="arrow2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#E0C26B"/>
+    </marker>
+    <marker id="arrow3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#778DA9"/>
+    </marker>
+    <marker id="arrow-dash" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#F57C00"/>
+    </marker>
+  </defs>
+
+  <rect width="1500" height="440" rx="24" fill="url(#bg2)"/>
+  <rect width="1500" height="440" rx="24" fill="url(#dotgrid)"/>
+
+  <text x="48" y="52" font-size="24" font-weight="800" fill="#F8F8F5">The pipeline, as connected pieces</text>
+  <text x="48" y="78" font-size="14" fill="#778DA9">6 macro pieces below &#183; 9 real sections total, full detail in TEACHABLE_GUIDE.md</text>
+
+  <!-- main chain, all coordinates absolute (no nested transforms) -->
+  <g stroke="#E0C26B" stroke-width="2.5" fill="none" marker-end="url(#arrow2)">
+    <line x1="240" y1="140" x2="280" y2="140"/>
+    <line x1="480" y1="140" x2="520" y2="140"/>
+    <line x1="720" y1="140" x2="760" y2="140"/>
+    <line x1="960" y1="140" x2="1000" y2="140"/>
+    <line x1="1200" y1="140" x2="1240" y2="140"/>
+  </g>
+
+  <!-- 1: Load Bank, Template & Config -->
+  <g transform="translate(40 90)">
+    <rect width="200" height="100" rx="12" fill="#1B263B" stroke="#415A77" stroke-width="1.5"/>
+    <text x="18" y="24" font-size="12" font-weight="800" fill="#E0C26B">01</text>
+    <g transform="translate(162 10)" stroke="#E0C26B" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="2" width="16" height="3" rx="1.5" fill="#E0C26B" stroke="none"/>
+      <rect x="4" y="8" width="12" height="3" rx="1.5" fill="#E0C26B" stroke="none"/>
+      <rect x="6" y="14" width="8" height="3" rx="1.5" fill="#E0C26B" stroke="none"/>
+    </g>
+    <text x="18" y="52" font-size="14" font-weight="700" fill="#F8F8F5">Load Bank,</text>
+    <text x="18" y="70" font-size="14" font-weight="700" fill="#F8F8F5">Template &amp; Config</text>
+    <text x="18" y="90" font-size="12" fill="#778DA9">your data, your template</text>
+  </g>
+
+  <!-- 2: Search LinkedIn -->
+  <g transform="translate(280 90)">
+    <rect width="200" height="100" rx="12" fill="#1B263B" stroke="#415A77" stroke-width="1.5"/>
+    <text x="18" y="24" font-size="12" font-weight="800" fill="#E0C26B">02</text>
+    <g transform="translate(162 10)" stroke="#E0C26B" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8" r="6"/>
+      <line x1="12.5" y1="12.5" x2="18" y2="18"/>
+    </g>
+    <text x="18" y="52" font-size="14" font-weight="700" fill="#F8F8F5">Search for</text>
+    <text x="18" y="70" font-size="14" font-weight="700" fill="#F8F8F5">Job Postings</text>
+    <text x="18" y="90" font-size="12" fill="#778DA9">one query, 3 pages</text>
+  </g>
+
+  <!-- 3: Fetch Job & Skip Duplicates -->
+  <g transform="translate(520 90)">
+    <rect width="200" height="100" rx="12" fill="#1B263B" stroke="#415A77" stroke-width="1.5"/>
+    <text x="18" y="24" font-size="12" font-weight="800" fill="#E0C26B">03</text>
+    <g transform="translate(162 10)" stroke="#E0C26B" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="10" y1="2" x2="10" y2="12"/>
+      <path d="M4,10 L10,16 L16,10"/>
+      <line x1="2" y1="18" x2="18" y2="18"/>
+    </g>
+    <text x="18" y="52" font-size="14" font-weight="700" fill="#F8F8F5">Fetch Job &amp;</text>
+    <text x="18" y="70" font-size="14" font-weight="700" fill="#F8F8F5">Skip Duplicates</text>
+    <text x="18" y="90" font-size="12" fill="#778DA9">per-job loop starts</text>
+  </g>
+
+  <!-- 4: AI Scoring & Content Selection (highlighted) -->
+  <g transform="translate(760 90)">
+    <rect width="200" height="100" rx="12" fill="#1B263B" stroke="#E0C26B" stroke-width="2"/>
+    <text x="18" y="24" font-size="12" font-weight="800" fill="#E0C26B">04</text>
+    <path transform="translate(160 8)" d="M10,0 L12.4,7.6 L20,10 L12.4,12.4 L10,20 L7.6,12.4 L0,10 L7.6,7.6 Z" fill="#E0C26B"/>
+    <text x="18" y="52" font-size="14" font-weight="700" fill="#F8F8F5">AI Scoring &amp;</text>
+    <text x="18" y="70" font-size="14" font-weight="700" fill="#F8F8F5">Content Selection</text>
+    <text x="18" y="90" font-size="12" fill="#778DA9">one schema-enforced call</text>
+  </g>
+
+  <!-- 5: Build & Compile Tailored CV -->
+  <g transform="translate(1000 90)">
+    <rect width="200" height="100" rx="12" fill="#1B263B" stroke="#415A77" stroke-width="1.5"/>
+    <text x="18" y="24" font-size="12" font-weight="800" fill="#E0C26B">05</text>
+    <g transform="translate(162 10)" stroke="#E0C26B" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3,1 L12,1 L17,6 L17,19 L3,19 Z"/>
+      <path d="M12,1 L12,6 L17,6"/>
+      <line x1="6" y1="11" x2="14" y2="11"/>
+      <line x1="6" y1="15" x2="14" y2="15"/>
+    </g>
+    <text x="18" y="52" font-size="14" font-weight="700" fill="#F8F8F5">Build &amp; Compile</text>
+    <text x="18" y="70" font-size="14" font-weight="700" fill="#F8F8F5">Tailored CV</text>
+    <text x="18" y="90" font-size="12" fill="#778DA9">LaTeX &#8594; real PDF</text>
+  </g>
+
+  <!-- 6: Deliver Result -->
+  <g transform="translate(1240 90)">
+    <rect width="200" height="100" rx="12" fill="#1B263B" stroke="#415A77" stroke-width="1.5"/>
+    <text x="18" y="24" font-size="12" font-weight="800" fill="#E0C26B">06</text>
+    <path transform="translate(160 9)" d="M1,9 L19,1 L11,19 L8.5,11.5 Z" fill="none" stroke="#E0C26B" stroke-width="1.6" stroke-linejoin="round"/>
+    <line x1="168.5" y1="20.5" x2="179" y2="10" stroke="#E0C26B" stroke-width="1.6"/>
+    <text x="18" y="52" font-size="14" font-weight="700" fill="#F8F8F5">Deliver</text>
+    <text x="18" y="70" font-size="14" font-weight="700" fill="#F8F8F5">Result</text>
+    <text x="18" y="90" font-size="12" fill="#778DA9">Telegram &#183; Drive &#183; Sheets</text>
+  </g>
+
+  <!-- retry branch off piece 4: straight vertical, card bottom (190) to box top (230) -->
+  <line x1="860" y1="190" x2="860" y2="230" stroke="#F57C00" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrow-dash)"/>
+  <rect x="750" y="230" width="220" height="60" rx="10" fill="#1B263B" stroke="#F57C00" stroke-width="1.5"/>
+  <text x="860" y="256" text-anchor="middle" font-size="13" font-weight="700" fill="#F8F8F5">Gemini Retry / Backoff</text>
+  <text x="860" y="276" text-anchor="middle" font-size="11" fill="#778DA9">on error: up to 3x, 35s wait</text>
+
+  <!-- loop: Deliver (06) bottom back to Fetch (03) bottom — square routing, clears the retry box below it -->
+  <path d="M 1340 190 L 1340 330 L 620 330 L 620 190"
+        fill="none" stroke="#778DA9" stroke-width="2" stroke-dasharray="9 6" stroke-linecap="round" marker-end="url(#arrow3)"/>
+  <text x="980" y="352" text-anchor="middle" font-size="12" fill="#778DA9">next job in the batch &#183; until the batch is done, then Run Summary logs the whole run</text>
+
+  <text x="48" y="410" font-size="12" fill="#415A77" font-family="'JetBrains Mono', ui-monospace, monospace">Per-Job Loop Controller + Run Summary are real single-node sections too, shown here as the loop itself &#183; see TEACHABLE_GUIDE.md for all 9</text>
+</svg>

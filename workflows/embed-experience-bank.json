@@ -1,0 +1,1661 @@
+{
+  "name": "Embed-Experience-Bank V6",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "YOUR_EXPERIENCE_BANK_FILE_ID",
+          "mode": "list",
+          "cachedResultName": "experience-bank.md",
+          "cachedResultUrl": "https://drive.google.com/file/d/YOUR_EXPERIENCE_BANK_FILE_ID/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -4016,
+        -1216
+      ],
+      "id": "7923dec6-2566-46e5-bf66-f435652c4108",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "22f98c0d-6cf4-415e-9dc1-7964225448a3",
+              "leftValue": "={{ $json.match_score }}",
+              "rightValue": "={{ $('CV Generation Config').first().json.cv_tailor_threshold }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2400,
+        -688
+      ],
+      "id": "f4be9416-1e61-407e-800c-6265274dec21",
+      "name": "Worth Tailoring?"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "YOUR_CV_TEMPLATE_FILE_ID",
+          "mode": "list",
+          "cachedResultName": "CV2_placeholders.tex",
+          "cachedResultUrl": "https://drive.google.com/file/d/YOUR_CV_TEMPLATE_FILE_ID/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -3424,
+        -1216
+      ],
+      "id": "cddd7577-7d7f-4b39-806f-8648cf25010b",
+      "name": "Download cv.tex",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://latex-api:8000/convert",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "main_file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1600,
+        -688
+      ],
+      "id": "331d7084-caf5-4a0d-a2f0-2f75706b6740",
+      "name": "latex-api /convert",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{$json.url}}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"User-Agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36\",\n  \"Accept\": \"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\",\n  \"Accept-Language\": \"en-US,en;q=0.9\",\n  \"Referer\": \"https://www.linkedin.com/\",\n  \"Upgrade-Insecure-Requests\": \"1\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2416,
+        -1216
+      ],
+      "id": "a81c781c-368f-44b5-a762-6068ed36a4d4",
+      "name": "Fetch LinkedIn Search Page"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Build LinkedIn Search URL\"  [UPDATED 2026-07-11, rev 2]\n// Mode: Run Once for All Items\n//\n// Input: items from Google Sheets, one row per title (column: \"title\").\n//        Optional fixed/global filter fields read from a Filters node\n//        (location, experience level, remote, job type, easy apply).\n//\n// Strategy: combine ALL titles from the sheet into ONE Boolean OR query\n// (quoted exact phrases) rather than looping one search per title -- this\n// produces PAGES_PER_RUN LinkedIn requests instead of N-per-title, keeping\n// request volume down while still covering every title.\n//\n// ENDPOINT: uses the \"jobs-guest\" endpoint\n// (linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search) rather than\n// the full search page (linkedin.com/jobs/search/). CONFIRMED (2026-07):\n// the unauthenticated full-page URL was tested directly against this\n// project and hit LinkedIn's authwall (HTTP 999) even with browser-like\n// headers. The two reference projects that DO use the full-page URL only\n// work because they either (a) pay a third-party scraping API to do it, or\n// (b) authenticate with a real logged-in session cookie -- neither is a\n// URL-choice difference, and (b) specifically reintroduces the exact\n// spoofed-Googlebot-UA + live-session-cookie exposure this project already\n// tested and moved away from. Do not swap this endpoint without one of\n// those two trade-offs being made deliberately, not as a side effect.\n//\n// PAGINATION [UPDATED 2026-07-11, rev 2]: previously hardcoded to start=0\n// (page 1 only), capping real volume regardless of how many titles were\n// OR'd together. RESULTS_PER_PAGE below is set to 10, matching the user's\n// real, directly observed output (every run returns exactly 10 links, not\n// the 25 first assumed in rev 1 -- that 25 was an unverified guess based\n// on a generic LinkedIn page size and was wrong for this specific\n// endpoint; corrected here based on actual observed behavior instead).\n// This value is still not independently verified beyond that one\n// observation -- if start=10 or start=20 return anything other than a\n// fresh, non-overlapping batch of 10, this constant needs revisiting\n// again. \"Dedup Job Links\" (new node, wired after Split Out) provides a\n// safety net either way if pages ever do overlap.\n//\n// NOTE (verified, not assumed): on public LinkedIn job search, Boolean\n// keywords match against the job DESCRIPTION, not the title/location\n// fields specifically -- so this query may surface jobs that mention a\n// title term in the body text even if their actual title differs. This\n// is an accepted tradeoff for fewer, less bot-like requests.\n\nconst PAGES_PER_RUN = 3;       // start=0, 10, 20 -- ~30 postings/run instead of ~10\nconst RESULTS_PER_PAGE = 10;   // per user's directly observed real output, NOT independently re-verified\n\nconst titleRows = $input.all().map(item => item.json);\n\nif (!titleRows.length) {\n  throw new Error('No title rows received from Google Sheets input.');\n}\n\n// Build the quoted-OR keyword string: \"Title A\" OR \"Title B\" OR ...\nconst titles = titleRows\n  .map(row => row.title)\n  .filter(Boolean);\n\nif (titles.length === 0) {\n  throw new Error('No valid \"title\" values found in the input rows.');\n}\n\nconst booleanKeywordQuery = titles\n  .map(t => `\"${t.replace(/\"/g, '')}\"`) // strip any stray quotes in the source data\n  .join(' OR ');\n\n// --- Fixed/global filters, read from Filters node (per user: NOT per-row) ---\nconst config = $('Filters').first()?.json || {};\nconst location = config.location || '';\nconst experienceLevel = config.experience_level || ''; // e.g. \"Mid-Senior level\"\nconst remote = config.remote || '';                     // e.g. \"Remote,Hybrid\"\nconst jobType = config.job_type || '';                  // e.g. \"Full-time\"\nconst easyApply = config.easy_apply === true ||\n  String(config.easy_apply).trim().toLowerCase() === 'true';\n\nfunction buildFilterSuffix() {\n  let suffix = '';\n\n  if (location) {\n    suffix += `&location=${encodeURIComponent(location)}`;\n  }\n\n  if (experienceLevel) {\n    const expLevelMap = {\n      'Internship': '1',\n      'Entry level': '2',\n      'Associate': '3',\n      'Mid-Senior level': '4',\n      'Director': '5',\n      'Executive': '6',\n    };\n    const transformed = experienceLevel\n      .split(',')\n      .map(e => expLevelMap[e.trim()] || '')\n      .filter(Boolean);\n    if (transformed.length) suffix += `&f_E=${transformed.join(',')}`;\n  }\n\n  if (remote) {\n    const remoteMap = { 'On-Site': '1', 'Remote': '2', 'Hybrid': '3' };\n    const transformed = remote\n      .split(',')\n      .map(e => remoteMap[e.trim()] || '')\n      .filter(Boolean);\n    if (transformed.length) suffix += `&f_WT=${transformed.join(',')}`;\n  }\n\n  if (jobType) {\n    const jobTypeMap = {\n      'Full-time': 'F', 'Part-time': 'P', 'Contract': 'C',\n      'Temporary': 'T', 'Other': 'O', 'Internship': 'I',\n    };\n    const transformed = jobType\n      .split(',')\n      .map(t => jobTypeMap[t.trim()] || '')\n      .filter(Boolean);\n    if (transformed.length) suffix += `&f_JT=${transformed.join(',')}`;\n  }\n\n  if (easyApply) {\n    // Verified parameter: f_EA=true shows only Easy Apply listings.\n    suffix += '&f_EA=true';\n  }\n\n  return suffix;\n}\n\nconst filterSuffix = buildFilterSuffix();\nconst keywordParam = `&keywords=${encodeURIComponent(booleanKeywordQuery)}`;\n\nconst pages = [];\nfor (let page = 0; page < PAGES_PER_RUN; page++) {\n  const start = page * RESULTS_PER_PAGE;\n  const url =\n    `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search` +\n    `?f_TPR=r604800&start=${start}${keywordParam}${filterSuffix}`;\n\n  pages.push({\n    json: {\n      url,\n      page_index: page,\n      start,\n      titles_combined: booleanKeywordQuery,\n      title_count: titles.length,\n    },\n  });\n}\n\nreturn pages;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2624,
+        -1216
+      ],
+      "id": "48ffdf00-1c27-4436-a020-dce14763ede4",
+      "name": "Build LinkedIn Search URL"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_JOB_TITLES_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Job Titles for URL",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TITLES_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Titles",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TITLES_SHEET_ID/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -2816,
+        -1216
+      ],
+      "id": "f928194a-5ea6-4468-896d-32b90ff02304",
+      "name": "Read Titles",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "links",
+              "cssSelector": "a.base-card__full-link",
+              "returnValue": "attribute",
+              "attribute": "href",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -2224,
+        -1216
+      ],
+      "id": "0f860b26-e20c-4d4d-a84f-53f8689d02ae",
+      "name": "Extract Job Links"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "links",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -2016,
+        -1216
+      ],
+      "id": "2853c039-adef-40a3-bd72-2be79c264ecd",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1616,
+        -1216
+      ],
+      "id": "e09725a3-bd42-48d5-8d89-33a3b7694d75",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.links }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -4000,
+        -688
+      ],
+      "id": "1f67dad5-09da-4b37-8e73-ec8e578aba4b",
+      "name": "Fetch Individual Job Page"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "title",
+              "cssSelector": "h1.top-card-layout__title"
+            },
+            {
+              "key": "company",
+              "cssSelector": "a.topcard__org-name-link"
+            },
+            {
+              "key": "location",
+              "cssSelector": "span.topcard__flavor--bullet"
+            },
+            {
+              "key": "description",
+              "cssSelector": "div.show-more-less-html__markup"
+            },
+            {
+              "key": "applicants_raw",
+              "cssSelector": ".num-applicants__caption"
+            },
+            {
+              "key": "apply_url",
+              "cssSelector": "link[rel='canonical']",
+              "returnValue": "attribute",
+              "attribute": "href"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -3808,
+        -688
+      ],
+      "id": "ebaca07f-8bf4-418a-b093-1a8ef2975ccd",
+      "name": "Extract Job Details"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Parse Applicant Count\"\n// Mode: Run Once for Each Item\n// Place this after the HTML extraction node that pulls the raw\n// \"applicants\" caption text from each job page.\n//\n// Converts raw text like \"23 applicants\" or \"Over 100 applicants\" into\n// a structured field: a number when known exactly, or null + a flag when\n// LinkedIn only shows the capped \"Over 100\" text. Filtering logic itself\n// is deliberately NOT implemented here -- per project decision, this just\n// captures the data; the actual \"under 10\" cutoff is a deferred decision.\n\nconst rawText = ($input.item.json.applicants_raw || '').trim();\n\nlet applicantCount = null;\nlet isCapped = false;\n\nif (rawText) {\n  const numberMatch = rawText.match(/(\\d+)/);\n  if (numberMatch) {\n    applicantCount = parseInt(numberMatch[1], 10);\n    isCapped = /over/i.test(rawText); // \"Over 100 applicants\" still has a number, but it's a floor, not exact\n  }\n}\n\nreturn {\n  json: {\n    ...$input.item.json,\n    applicant_count: applicantCount,   // number, or null if not found/parseable\n    applicant_count_capped: isCapped,  // true if text said \"Over X\" (not exact)\n    applicant_count_raw: rawText,      // keep original text for debugging/audit\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3200,
+        -688
+      ],
+      "id": "c59bcf78-1bf9-44ce-a24e-310b2b8934d1",
+      "name": "Parse Applicant Count"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_JOB_TITLES_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Job Titles for URL",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TITLES_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 99112621,
+          "mode": "list",
+          "cachedResultName": "Settings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TITLES_SHEET_ID/edit#gid=99112621"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3024,
+        -1216
+      ],
+      "id": "522ea533-bdf0-4c0c-9944-dc0bf0d6737b",
+      "name": "Filters",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Check Compile Result\"\n// Mode: Run Once for All Items\n// Place immediately after \"latex-api /convert\".\n// Inspects whether the compile succeeded (PDF binary present) or failed\n// (422 + compiler log, surfaced via n8n's error-continuation output).\n\nconst item = $input.first();\n\nif (item.json && item.json.error) {\n  let compileError = null;\n  let compileLog = null;\n  let parseFailed = false;\n\n  try {\n    const rawMessage = item.json.error.message || '';\n    const dashIndex = rawMessage.indexOf(' - ');\n    const afterDash = dashIndex !== -1 ? rawMessage.slice(dashIndex + 3) : rawMessage;\n    const innerJsonString = JSON.parse(afterDash);\n    const parsed = JSON.parse(innerJsonString);\n    compileError = parsed.detail?.error || null;\n    compileLog = parsed.detail?.log || null;\n  } catch (e) {\n    parseFailed = true;\n  }\n\n  return [{\n    json: {\n      success: false,\n      error_message: compileError || item.json.error.message || 'Unknown latex-api error',\n      compile_log: compileLog ? compileLog.replace(/\\\\n/g, '\\n').slice(0, 2000) : null,\n      parse_failed: parseFailed,\n    },\n  }];\n}\n\nif (!item.binary || !item.binary.data) {\n  return [{\n    json: {\n      success: false,\n      error_message: 'latex-api returned no error but also no PDF binary.',\n      compile_log: null,\n    },\n  }];\n}\n\n// --- Build the dynamic filename ---\nconst jobTitle = $('Extract Job Details').first().json.title || 'Untitled';\nconst company = $('Extract Job Details').first().json.company || 'UnknownCompany';\n\nconst sanitize = (s) => s\n  .trim()\n  .replace(/[\\\\/:*?\"<>|]/g, '')   // strip filesystem-illegal characters\n  .replace(/\\s+/g, ' ');           // collapse repeated whitespace\n\nconst ownerName = ($('CV Generation Config').first().json.cv_owner_name || 'Candidate').trim();\nconst fileName = `${sanitize(ownerName)}- ${sanitize(jobTitle)}-${sanitize(company)}.pdf`;\n\nreturn [{\n  json: { success: true },\n  binary: {\n    data: {\n      ...item.binary.data,\n      fileName,\n    },\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1408,
+        -688
+      ],
+      "id": "bbf0a3e9-26e2-4601-af9d-c36356f8650b",
+      "name": "Check Compile Result"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bf495003-6e90-4056-897e-64e3ad126d56",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1200,
+        -688
+      ],
+      "id": "7d6ca51b-1e9b-4fa8-959b-1a0c549f9134",
+      "name": "Compile Succeeded?"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -4224,
+        -1216
+      ],
+      "id": "305ad271-1055-4699-b130-c37be5657e12",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3daf20b4-c5e3-4904-b4a0-e793ef2a7135",
+              "name": "cv_tailor_threshold",
+              "value": 30,
+              "type": "number"
+            },
+            {
+              "id": "b2f1a001-owner-name-0001-000000000001",
+              "name": "cv_owner_name",
+              "value": "Your Name",
+              "type": "string"
+            },
+            {
+              "id": "b2f1a002-forced-line-0002-000000000002",
+              "name": "forced_skills_line_index",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "b2f1a003-forced-skills-0003-00000000003",
+              "name": "forced_skills_json",
+              "value": "=[\"AI Automation & Workflow Design (n8n, APIs)\",\"MS Suite (Excel), Google Workspace, Notion\"]",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3616,
+        -1216
+      ],
+      "id": "eaec7b43-7d1e-4cd1-b2aa-62b055a2d5bf",
+      "name": "CV Generation Config"
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "binaryData": true,
+        "binaryPropertyName": "={{$('Check Compile Result').item.binary.data}}",
+        "additionalFields": {
+          "caption": "=🔥 New JobOffer for *{{ $now.format('dd-MM-yyyy') }}*\n\n*Title :* {{ $('Extract Job Details').item.json.title }}\n*Company :* {{ $('Extract Job Details').item.json.company }}\n*Location :* {{ $('Extract Job Details').item.json.location }}\n*Score :* {{ $('Parse Gemini Selection Output').item.json.match_score }}\n*Applicant No. :* {{ $('Extract Job Details').item.json.applicants_raw }}\n*Apply link :*{{ $('Extract Job Details').item.json.apply_url }}\n",
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1008,
+        -688
+      ],
+      "id": "3bdb46c1-ab3e-4dcd-b473-c87f6ac29e9e",
+      "name": "Send Tailored CV",
+      "webhookId": "fadcb0ba-f449-48cc-bd7f-6ba4468e7e89",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account (N8N bot)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=Encountered an error generation.\n\n🔥 New JobOffer for *{{ $now.format('dd-MM-yyyy') }}*\n\n*Title :* {{ $('Extract Job Details').item.json.title }}\n*Company :* {{ $('Extract Job Details').item.json.company }}\n*Location :* {{ $('Extract Job Details').item.json.location }}\n*Score :* {{ $('Parse Gemini Selection Output').item.json.match_score }}\n*Applicant No. :* {{ $('Extract Job Details').item.json.applicants_raw }}\n*Apply link :*{{ $('Extract Job Details').item.json.apply_url }}\n",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1008,
+        -416
+      ],
+      "id": "bd773208-5c0b-44e9-99c3-6288a7f0bcd0",
+      "name": "Send Error",
+      "webhookId": "bc76ff11-92c8-49fb-a2d1-b24e50c9f143",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account (N8N bot)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Decode step (merged from the former \"Decode CV Template to JSON\" node --\n// single-producer/single-consumer, no behavior change).\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst templateText = buffer.toString('utf-8');\n\nif (!templateText || !templateText.includes('\\\\documentclass')) {\n  throw new Error(\n    'Decoded content does not look like a LaTeX file (missing ' +\n    '\\\\documentclass). Check the Drive download node and file.'\n  );\n}\n\nconst placeholderMatches = [...templateText.matchAll(/<<([A-Z0-9_]+)(?::(\\d+))?>>/g)];\nconst seen = new Map();\nfor (const m of placeholderMatches) {\n  const name = m[1];\n  const maxLength = m[2] ? parseInt(m[2], 10) : null;\n  if (!seen.has(name)) seen.set(name, { name, maxLength });\n}\nconst allPlaceholders = [...seen.values()];\n\nconst roleBulletPlaceholders = [];\nconst skillsLinePlaceholders = [];\nconst freeTextPlaceholders = [];\n\nfor (const p of allPlaceholders) {\n  const roleBulletMatch = p.name.match(/^ROLE(\\d+)_BULLET(\\d+)$/);\n  const skillsLineMatch = p.name.match(/^SKILLS_LINE_(\\d+)$/);\n  if (roleBulletMatch) {\n    roleBulletPlaceholders.push({ ...p, roleIndex: parseInt(roleBulletMatch[1], 10), bulletIndex: parseInt(roleBulletMatch[2], 10) });\n  } else if (skillsLineMatch) {\n    skillsLinePlaceholders.push({ ...p, lineIndex: parseInt(skillsLineMatch[1], 10) });\n  } else {\n    freeTextPlaceholders.push(p.name);\n  }\n}\n\nif (allPlaceholders.length === 0) {\n  throw new Error('No <<PLACEHOLDER>> tokens found in template.');\n}\n\n// --- NEW: extract each \\jobentry{Title}{Company}{Dates} in document order,\n//     so ROLE1, ROLE2... can be described to the AI in plain language\n//     instead of just bare placeholder names. ---\nfunction stripLatexComments(text) {\n  return text.split('\\n').map(line => {\n    let backslashRun = 0;\n    for (let i = 0; i < line.length; i++) {\n      const ch = line[i];\n      if (ch === '\\\\') { backslashRun++; continue; }\n      if (ch === '%' && backslashRun % 2 === 0) return line.slice(0, i);\n      backslashRun = 0;\n    }\n    return line;\n  }).join('\\n');\n}\nconst cleaned = stripLatexComments(templateText);\nconst jobEntryPattern = /\\\\jobentry\\{([^}]*)\\}\\{([^}]*)\\}\\{([^}]*)\\}/g;\nconst roleMeta = [];\nlet m;\nlet idx = 0;\nwhile ((m = jobEntryPattern.exec(cleaned)) !== null) {\n  idx += 1;\n  roleMeta.push({ roleIndex: idx, title: m[1], company: m[2], dates: m[3] });\n}\n\n// Attach bulletsNeeded per role by counting its placeholders\nconst roleSummary = roleMeta.map(r => ({\n  ...r,\n  bulletsNeeded: roleBulletPlaceholders.filter(p => p.roleIndex === r.roleIndex).length,\n}));\n\nif (roleSummary.length === 0) {\n  throw new Error('No \\\\jobentry{} calls found in template -- cannot describe roles to the AI.');\n}\n\nreturn [{\n  json: {\n    tex_content: templateText,\n    all_placeholders: allPlaceholders.map(p => p.name),\n    role_bullet_placeholders: roleBulletPlaceholders,\n    skills_line_placeholders: skillsLinePlaceholders,\n    free_text_placeholders: freeTextPlaceholders,\n    role_summary: roleSummary,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3216,
+        -1216
+      ],
+      "id": "ed2db8f9-82f2-4a54-87bf-b77903e18b05",
+      "name": "Discover Placeholders"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allFields = $input.first().json.all_fields;\nconst discovery = $('Discover Placeholders').first().json;\nconst templateText = $('Discover Placeholders').first().json.tex_content;\n\nif (!allFields) {\n  throw new Error('Missing all_fields from \"Map AI Output And Pack Skills\".');\n}\n\n// Skills-line fields arrive pre-assembled by the previous node: each phrase\n// was already escaped individually, then joined with real LaTeX \\;|\\;\n// separators (and the two forced line-3 constants already injected). Running\n// escapeLatex on the WHOLE joined string here would strip those deliberate\n// backslashes and break the separators -- substitute these fields as-is.\nconst skillsLineNames = new Set(discovery.skills_line_placeholders.map(p => p.name));\n\nfunction escapeLatex(str) {\n  let s = String(str);\n  if (/\\\\/.test(s)) {\n    console.log('[WARN] Stripped unexpected literal backslash from generated content.');\n    s = s.replace(/\\\\/g, '');\n  }\n  return s.replace(/([%&_#{}$])/g, '\\\\$1');\n}\n\nlet filled = templateText;\nfor (const [name, value] of Object.entries(allFields)) {\n  const finalText = skillsLineNames.has(name) ? value : escapeLatex(value);\n  const tokenPattern = new RegExp(`<<${name}(?::\\\\d+)?>>`, 'g');\n  filled = filled.replace(tokenPattern, finalText);\n}\n\n// The old Gemini-schema pathway (responseSchema, native API enforcement)\n// guaranteed every requested field would be present. Basic LLM Chain's\n// JSON parsing carries no equivalent guarantee, so this check is new --\n// not leftover from the old architecture -- and specific to this less\n// strictly-enforced pathway.\nconst missing = discovery.all_placeholders.filter(name => !(name in allFields));\nif (missing.length > 0) {\n  throw new Error(`Missing field(s) from AI output: ${missing.join(', ')}`);\n}\n\n// Safety net: confirm nothing was left unfilled.\nconst leftover = [...new Set(\n  [...filled.matchAll(/<<([A-Z0-9_]+)(?::\\d+)?>>/g)].map(m => m[1])\n)];\nif (leftover.length > 0) {\n  throw new Error(`Unfilled placeholder(s) remain after substitution: ${leftover.join(', ')}`);\n}\n\n// Uses .includes(), not .startsWith(): CV2_placeholders.tex has a comment\n// header before \\documentclass, unlike the old fully-AI-generated .tex files\n// where \\documentclass was required to be the literal first token.\nif (!filled.includes('\\\\documentclass')) {\n  throw new Error('Output does not contain \\\\documentclass -- substitution likely corrupted.');\n}\nif (!filled.includes('\\\\end{document}')) {\n  throw new Error('Output is missing \\\\end{document}.');\n}\n\n// Binary-encode step (merged from the former \"Encode Tailored Tex to\n// Binary\" node -- single-producer/single-consumer, no behavior change).\n// latex-api requires a genuine multipart file upload with a filename\n// ending in .tex (a FastAPI UploadFile, not a plain string field).\nconst buffer = Buffer.from(filled, 'utf-8');\n\nreturn [{\n  json: { tailored_tex: filled },\n  binary: {\n    data: {\n      data: buffer.toString('base64'),\n      mimeType: 'text/x-tex',\n      fileName: 'tailored-cv.tex',\n    },\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1808,
+        -688
+      ],
+      "id": "ece99b5f-6eba-447e-913b-30032844ba58",
+      "name": "Parse And Fill Template"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Map AI Output And Pack Skills\"  [UPDATED 2026-07-08]\n// Mode: Run Once for All Items\n// Now runs on the TRUE branch of \"Worth Tailoring?\", downstream of\n// \"Parse Gemini Selection Output\". Its direct input is already the clean,\n// validated, parsed AI output object -- no raw response handling here\n// anymore. (Previously this node did its own JSON.parse of the raw\n// candidate text; that responsibility moved to \"Parse Gemini Selection\n// Output\" so \"Worth Tailoring?\" could gate on match_score before this\n// node runs at all.)\n\nconst parsed = $input.first().json;\n\nconst discovery = $('Discover Placeholders').first().json;\n\nconst allFields = { TAGLINE: parsed.tagline, PROFILE: parsed.profile };\nfor (const b of parsed.bullet_assignments) {\n  allFields[b.placeholder] = b.text;\n}\n\nfunction escapeLatexPhrase(str) {\n  return String(str).replace(/([%&_#{}$])/g, '\\\\$1');\n}\n\n// CONFIGURABLE (v6): forced skills + which line they open, read from the\n// \"CV Generation Config\" config node instead of hardcoded. Set\n// forced_skills_json to \"[]\" to disable forcing entirely for a different\n// bank/template.\nconst cfgNode = $('CV Generation Config').first().json;\nconst CONSTANT_SKILLS = JSON.parse(cfgNode.forced_skills_json || '[]').map(escapeLatexPhrase);\nconst CONSTANT_LINE_INDEX = cfgNode.forced_skills_line_index || null;\nconst SEP = ' \\\\;|\\\\; ';\nconst SEP_VISUAL_LENGTH = 3;\n\nconst skillsLineSlots = discovery.skills_line_placeholders.sort((a, b) => a.lineIndex - b.lineIndex);\nfor (const slot of skillsLineSlots) {\n  if (!slot.maxLength) {\n    throw new Error(`${slot.name} has no declared max length -- template must use <<${slot.name}:NUMBER>>.`);\n  }\n}\n\nconst constantsLength = CONSTANT_SKILLS.reduce((sum, s, i) => sum + s.length + (i > 0 ? SEP_VISUAL_LENGTH : 0), 0);\n\nconst bins = skillsLineSlots.map(slot => {\n  if (CONSTANT_SKILLS.length > 0 && slot.lineIndex === CONSTANT_LINE_INDEX) {\n    if (constantsLength > slot.maxLength) {\n      throw new Error(`Line ${CONSTANT_LINE_INDEX}'s constants (${constantsLength} chars) exceed its max (${slot.maxLength}).`);\n    }\n    return { slot, capacity: slot.maxLength, used: constantsLength, items: [{ text: CONSTANT_SKILLS.join(SEP), isConstant: true, originalIndex: -1, priority: -1 }] };\n  }\n  return { slot, capacity: slot.maxLength, used: 0, items: [] };\n});\n\n// Pack in PRIORITY order (the AI's relevance ranking), not by length --\n// see 2026-07 finding: length-based packing silently dropped the AI's\n// #1-ranked skill in favor of lower-priority but shorter ones.\nconst items = parsed.skill_candidates\n  .sort((a, b) => a.priority - b.priority)\n  .map((s, originalIndex) => {\n    const escaped = escapeLatexPhrase(s.text);\n    return { text: escaped, length: escaped.length, originalIndex, priority: s.priority };\n  });\n\nconst dropped = [];\nfor (const item of items) {\n  let placed = false;\n  for (const bin of bins) {\n    const addedLength = bin.items.length === 0 ? item.length : item.length + SEP_VISUAL_LENGTH;\n    if (bin.used + addedLength <= bin.capacity) {\n      bin.items.push(item);\n      bin.used += addedLength;\n      placed = true;\n      break;\n    }\n  }\n  if (!placed) dropped.push(item);\n}\n\nif (dropped.length > 0) {\n  console.log(`[INFO] ${dropped.length}/${items.length} AI-selected skill(s) dropped: ` +\n    dropped.map(d => `priority ${d.priority} \"${d.text}\"`).join(', '));\n}\n\nconst skillsLines = {};\nfor (const bin of bins) {\n  const constants = bin.items.filter(i => i.isConstant);\n  const fillers = bin.items.filter(i => !i.isConstant).sort((a, b) => a.originalIndex - b.originalIndex);\n  skillsLines[bin.slot.name] = [...constants, ...fillers].map(i => i.text).join(SEP);\n}\nfor (const [name, value] of Object.entries(skillsLines)) {\n  allFields[name] = value;\n}\n\nreturn [{ json: { all_fields: allFields, raw_ai_output: parsed } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2208,
+        -688
+      ],
+      "id": "b1bd4bea-9859-4da4-95d1-f52637559e6a",
+      "name": "Map AI Output And Pack Skills"
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst allIterations = staticData.collected || [];\nstaticData.collected = [];\nreturn [{ json: { all_iterations: allIterations } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1488,
+        -1696
+      ],
+      "id": "0cb9b6eb-1616-4461-a18e-8e54b5ee85bb",
+      "name": "output collector"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    { \"parts\": [{ \"text\": {{ JSON.stringify($json.prompt) }} }] }\n  ],\n  \"generationConfig\": {\n    \"responseMimeType\": \"application/json\",\n    \"responseSchema\": {{ JSON.stringify($json.responseSchema) }}\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2800,
+        -688
+      ],
+      "id": "0d6121dc-0872-4fb3-ba98-ac9a428d5f18",
+      "name": "Call Gemini For Selection",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_GEMINI_CREDENTIAL_ID",
+          "name": "Gemini API Key (Header)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Collect For Review\"\n// Mode: Run Once for All Items\n//\n// Accumulates one record per job into workflow static data, across every\n// iteration of the per-job loop. Read back afterward by \"output collector\"\n// (placed on Loop Over Items' \"done\" branch), which dumps the full array\n// in one item -- avoids paging through n8n's per-iteration execution view\n// manually.\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.collected) staticData.collected = [];\n\nconst aiOutput = $json.raw_ai_output;\nconst allFields = $json.all_fields;\n\nstaticData.collected.push({\n  job_title: $('Extract Job Details').first().json.title,\n  jd_description: $('Extract Job Details').first().json.description,\n  tagline: aiOutput?.tagline,\n  profile: aiOutput?.profile,\n  skill_candidates: aiOutput?.skill_candidates, // raw AI picks + priority, before packing\n  bullet_assignments: aiOutput?.bullet_assignments,\n  score: aiOutput?.match_score,\n  final_skills_lines: {\n    SKILLS_LINE_1: allFields?.SKILLS_LINE_1,\n    SKILLS_LINE_2: allFields?.SKILLS_LINE_2,\n    SKILLS_LINE_3: allFields?.SKILLS_LINE_3,\n  },\n});\n\nreturn $input.all(); // pass through unchanged -- this node is purely observational"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2000,
+        -688
+      ],
+      "id": "7c9e81cc-031b-456a-8dd3-7cd7d5f24f3c",
+      "name": "Collect For Review"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Format Bank For Prompt\"  [UPDATED 2026-07-08, rev 2]\n// Mode: Run Once for All Items\n//\n// Builds the full prompt text and the responseSchema for the direct\n// Gemini generateContent call (Option B architecture -- native\n// responseSchema enforcement, not the LangChain Basic LLM Chain path,\n// which was abandoned 2026-07 after repeated structured-output parser\n// failures on real data, confirmed against a documented n8n bug).\n//\n// Prompt rules incorporate fixes confirmed by real output analysis:\n//   - Rule 1 (LANGUAGE): a single French JD flipped all 16 bullets to\n//     French. Forcing English-always fixes it. Note: a real run still\n//     leaked one untranslated French BANK skill (\"Vente B2B SaaS\n//     (PME/ETI)\") straight into a final CV even though the JD itself was\n//     in French correctly-handled elsewhere -- the rule evidently wasn't\n//     being checked against BANK-sourced text as reliably as freshly\n//     composed text. Rule 1 below now says this explicitly.\n//   - Rule 4 (JD-SPECIFIC) [REWRITTEN 2026-07-08]: the original version\n//     capped detection at \"2-3 most specific requirements,\" which let\n//     signals compete for a shared quota -- confirmed on real data: JDs\n//     mentioning explicit international/multinational scope only got a\n//     matching bank skill selected in 1 of 3 comparable real cases (Job A\n//     \"180 countries\" -> missed, Job B \"a l'international\" -> caught,\n//     Job C \"en France et a l'international\" -> missed). Rewritten\n//     as a fixed checklist of independent signal categories instead of a\n//     shared numeric cap, plus a new top-5 ranking requirement -- a\n//     separate real miss showed a correctly-selected signal match\n//     (\"Industrial Sales Strategy\") buried at priority #9 of 18, which is\n//     as good as not showing on a length-constrained skills line.\n//   - Rule 11 (MATCH_SCORE) [ADDED 2026-07-08]: scoring moved from a\n//     separate embedding-based cosine-similarity call into this same\n//     generateContent call -- see project plan for the reasoning\n//     (removes a 6.5MB cached embeddings file + halves API calls/job).\n//     cv_tailor_threshold (30) is untested on this new 0-100 self-assessed\n//     scale and needs real-JD calibration once live.\n\nconst bankEntries = $('Collect Bank Entries').first().json.bank_entries;\nconst roleSummary = $('Discover Placeholders').first().json.role_summary;\n\nconst bulletEntries = bankEntries.filter(e => e.type === 'bullet');\nconst skillEntries = bankEntries.filter(e => e.type === 'skill');\n\n// Derived generically from the bank's own role headers (v6) instead of a\n// hardcoded \"sales/business-development\" domain -- keeps the rubric\n// accurate for any bank, not just this one.\nconst bankDomainPhrase = [...new Set(bulletEntries.map(e => e.role).filter(Boolean))]\n  .join(', ') || 'the BANK\\'s professional background';\n\n// Plain-text bank listings the prompt references by [id] -- the AI must\n// select FROM these, never invent new bullet/skill text from scratch.\nconst bulletBankText = bulletEntries\n  .map(e => `[${e.id}] (${e.role}) ${e.text}`)\n  .join('\\n');\n\nconst skillBankText = skillEntries\n  .map(e => `[${e.id}] ${e.text}`)\n  .join('\\n');\n\n// Plain-language description of each CV role slot, built from the\n// template's actual \\jobentry{} calls (via Discover Placeholders) --\n// NOT from strict date-string matching, which is what made the old\n// cosine-similarity architecture brittle against template changes.\nconst roleSlotsText = roleSummary\n  .map(r => `ROLE${r.roleIndex}: \"${r.title}\" at ${r.company}, ${r.dates} -- needs ${r.bulletsNeeded} bullets (placeholders: ROLE${r.roleIndex}_BULLET1..${r.bulletsNeeded})`)\n  .join('\\n');\n\nconst jobTitle = $('Extract Job Details').first().json.title || '';\nconst jobDescription = $('Extract Job Details').first().json.description || '';\n\nconst prompt = `You are selecting and rewording content for a CV to match a job posting,\nfrom a fixed bank of pre-approved, factual bullets and skills. You must\nnever invent content not present in the bank.\n\n## JOB\nTitle: ${jobTitle}\nDescription:\n${jobDescription}\n\n## ROLE SLOTS TO FILL (from the CV template)\n${roleSlotsText}\n\n## BULLET BANK (pick from these only, by [id])\n${bulletBankText}\n\n## SKILL BANK (pick from these only, by [id])\n${skillBankText}\n\n## Rules\n1. LANGUAGE: Write EVERY output field -- tagline, profile, all bullets, all\n   skills -- in English, always, regardless of the language of the JOB\n   description above. If the JOB is written in French or any other language,\n   still produce all output in English. Never output a bullet, skill, or any\n   field in a non-English language, even if the source JOB text is in that\n   language. This applies EQUALLY to text copied or lightly adapted from the\n   BANK: if a BANK entry itself is written in French or any other\n   non-English language (some SKILL BANK entries are), you must still\n   translate it to English before using it -- do not pass through\n   non-English BANK text unchanged just because it came from the BANK\n   rather than being freshly composed.\n2. For each ROLE slot above, choose the bullets from the BULLET BANK that\n   best fit that role -- use the role's dates/company as a strong signal,\n   but you may select any bullet whose real history plausibly overlaps\n   that role's timeframe if it is the best available match for the JOB.\n   Never invent a bullet. Never reuse the same bullet ID in two different\n   role slots.\n3. Reword each selected bullet toward the JOB's language/keywords (in\n   English per rule 1). Preserve every number and named entity exactly.\n   Keep each bullet under ~110 characters.\n4. JD-SPECIFIC SIGNAL DETECTION: Before filling any skill slots with\n   general sales skills, independently check the JOB for EACH of these\n   signal categories -- check every category every time, do not stop\n   after finding one or two:\n   a) Named industry or vertical (e.g. industrial, manufacturing, SaaS,\n      logistics, retail, healthcare, hospitality).\n   b) Named tool, platform, or software (e.g. Salesforce, HubSpot, a\n      specific CRM or product name).\n   c) Geographic or international/multinational scope (e.g. the words\n      \"international\", \"multinational\", \"global\", a stated number of\n      countries, cross-border or multi-region operations). Treat this\n      category with the same weight as industry/vertical -- it has been\n      under-detected in the past.\n   d) Named sales methodology (e.g. MEDDIC, BANT, SPIN, ABM, Challenger,\n      Sales Navigator / social selling tools).\n   e) Deal size, deal complexity, or company-stage signals (e.g.\n      enterprise, SMB, startup, a stated deal-size range).\n   For every category that is genuinely present in the JOB, record a short\n   phrase describing it in \\`jd_specific_signals\\`, and select the single\n   best-matching BANK skill for that signal if one exists in the SKILL\n   BANK -- do this independently per category; finding a match in one\n   category is never a reason to skip checking another. If NO bank skill\n   matches a genuinely-present signal, do not invent one (see rule 6) --\n   just record the signal in \\`jd_specific_signals\\` with no matching skill.\n   Only after all five categories have been checked and their available\n   matches selected, fill any remaining skill slots with the most relevant\n   general sales skills. Do not let generic skills crowd out an available\n   specific match.\n5. Select 12-18 SKILL BANK entries most relevant to the JOB, avoiding two\n   entries that express the same underlying concept (e.g. do not select\n   both \"Account Management & Customer Success\" and \"Key Account\n   Management & Partnership Development\" -- pick the one that fits better\n   and drop the other).\n6. You may reword a skill's phrasing, but you must NEVER add a tool,\n   platform, brand, certification name, or any other concept, however\n   plausible-sounding, that is not already present, verbatim or as a\n   direct translation, in that skill's own bank text -- even if it seems\n   relevant to the JOB or appears in the skill bank elsewhere. If nothing\n   in the SKILL BANK fits a gap, leave the gap -- do not fill it with an\n   invented skill phrase.\n7. If a bank skill fits naturally in under ~25 characters, use it as-is\n   or lightly reword it. If it does not, use it at its natural length --\n   do NOT create abbreviations like \"Mgmt\", \"Dev.\", or \"Opt.\" to force a\n   skill shorter. Truncated words look unprofessional on a real CV.\n   Fitting within line-length limits is handled separately, after your\n   selection -- it is not your responsibility to compress wording.\n8. Order selected skills by relevance: priority 1 = most relevant. Any\n   skill selected because it matched a signal in \\`jd_specific_signals\\`\n   (per rule 4) MUST be ranked in the top 5 priorities -- a correct match\n   buried in the middle or end of the list is as good as not selecting it\n   at all, since lower-priority skills are the first to be dropped by the\n   downstream character-budget packer.\n9. TAGLINE: exactly one job title or role name, 2-5 words, matching the\n   style of a real job title (e.g. \"Senior Account Executive\", \"Business\n   Development Manager\"). Do NOT write a descriptive sentence or clause.\n   NEVER use constructions like \"specializing in...\", \"with expertise\n   in...\", or any phrase joined by \"and\" describing two areas of work.\n   If unsure, default to the closest real job title implied by the JOB.\n   CONSERVATIVE BY DEFAULT: prefer the JOB posting's own title as closely\n   as possible -- do NOT add seniority modifiers (\"Senior\", \"Lead\",\n   \"Strategic\", etc.) or extra qualifiers (\"Manager\", \"Specialist\") that\n   are not present in the JOB's own title, even if they sound more\n   impressive or better match the BANK's bullets. Only deviate from the\n   JOB's exact title to expand a clear abbreviation (e.g. \"BDR\" ->\n   \"Business Development Representative\").\n10. PROFILE: 2-4 sentences using only claims supported by selected bullets.\n   Do not restate facts already shown elsewhere on the CV (degree,\n   language fluency). CRITICAL: never repeat a SPECIFIC fact that already\n   appears in a selected bullet -- no numbers, percentages, dollar/deal\n   sizes, company names, or quota figures the bullets already state (the\n   recruiter will read both sections; restating a number is redundant,\n   not reinforcing). General, qualitative claims are fine as long as they\n   do not restate a bullet's specific figure or named entity -- e.g.\n   \"experience managing enterprise accounts\" is fine, \"grew accounts by\n   50%\" is not if a selected bullet already states that 50%.\n11. MATCH_SCORE: Judge how well this JOB matches the BANK as a whole and\n   output it as \\`match_score\\`, an integer from 0-100. Use this rubric:\n   - 80-100: The JOB's core function and most of its SPECIFIC requirements\n     (named tools, methodologies, verticals) are genuinely represented in\n     the BANK -- e.g. a B2B sales / account management / business\n     development role with strong matching bullets and skills available.\n   - 40-79: The JOB shares the same general professional domain as the\n     BANK (${bankDomainPhrase}-adjacent, partially overlapping function)\n     but is missing several specific/named requirements the BANK doesn't\n     cover.\n   - 0-39: The JOB's core function is fundamentally different from the\n     BANK's background (${bankDomainPhrase}) -- e.g. a role in an unrelated\n     profession with no meaningful skill overlap.\n   Still complete bullet_assignments and skill_candidates FULLY and\n   normally regardless of the match_score value you assign -- do not\n   shorten, skip, or under-invest in content just because you judge the\n   score to be low. The score is used downstream to decide whether to use\n   your output at all; your job here is to produce it correctly either way.\n\nReturn ONLY the requested JSON object -- no explanation, no markdown fences.`;\n\n// Native Gemini responseSchema -- enforced during generation, not parsed\n// after the fact. This is the property that makes Option B structurally\n// immune to the \"Model output doesn't fit required format\" failure seen\n// with the LangChain Structured Output Parser.\n//\n// jd_specific_signals is placed right after match_score, before the\n// content fields -- same trick as match_score itself: forcing the model\n// to commit to an explicit, inspectable list of what it thinks the JOB's\n// specific signals are BEFORE it selects skills, rather than leaving\n// signal-detection as implicit, unauditable reasoning. This also gives\n// a concrete diagnostic to check when auditing a run: if a real signal\n// (e.g. \"international scope\") is missing from this array entirely, the\n// miss is in detection; if it's present but no matching skill was\n// selected/ranked highly, the miss is in selection or ranking -- two\n// different problems that look identical without this field.\nconst responseSchema = {\n  type: 'object',\n  properties: {\n    match_score: { type: 'integer' },\n    jd_specific_signals: {\n      type: 'array',\n      items: { type: 'string' },\n    },\n    tagline: { type: 'string' },\n    profile: { type: 'string' },\n    bullet_assignments: {\n      type: 'array',\n      items: {\n        type: 'object',\n        properties: {\n          placeholder: { type: 'string' },\n          text: { type: 'string' },\n        },\n        required: ['placeholder', 'text'],\n      },\n    },\n    skill_candidates: {\n      type: 'array',\n      items: {\n        type: 'object',\n        properties: {\n          text: { type: 'string' },\n          priority: { type: 'integer' },\n        },\n        required: ['text', 'priority'],\n      },\n    },\n  },\n  required: ['match_score', 'jd_specific_signals', 'tagline', 'profile', 'bullet_assignments', 'skill_candidates'],\n};\n\nreturn [{ json: { prompt, responseSchema } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3008,
+        -688
+      ],
+      "id": "898a63b5-dcab-46c1-8ff1-229b5f20128b",
+      "name": "Format Bank For Prompt"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Parse Gemini Selection Output\"  [NEW 2026-07-08]\n// Mode: Run Once for All Items\n// Place IMMEDIATELY after \"Call Gemini For Selection\" (the direct Gemini\n// generateContent HTTP call).\n//\n// Parses the raw model response exactly once, following the same\n// \"decode once, right after the source\" discipline this project already\n// uses for binary Google Drive downloads -- applied here to the raw JSON\n// text response instead of binary data. Both downstream consumers\n// (\"Worth Tailoring?\" IF node and \"Map AI Output And Pack Skills\") read\n// the clean, already-parsed fields from THIS node's output. Neither\n// should call JSON.parse on the raw response again.\n//\n// This replaces the parsing block that used to live inside\n// \"Map AI Output And Pack Skills\" -- moved here because \"Worth Tailoring?\"\n// now sits between the two and needs match_score before Map AI Output\n// runs at all.\n\nconst response = $input.first().json;\n\nif (!response.candidates || response.candidates.length === 0) {\n  throw new Error(`No candidates in Gemini response: ${JSON.stringify(response).slice(0, 500)}`);\n}\nconst candidate = response.candidates[0];\nif (candidate.finishReason && candidate.finishReason !== 'STOP') {\n  throw new Error(`Generation did not finish normally (finishReason: ${candidate.finishReason}).`);\n}\nif (!candidate.content?.parts?.length) {\n  throw new Error('Candidate has no content parts.');\n}\n\nlet parsed;\ntry {\n  parsed = JSON.parse(candidate.content.parts[0].text);\n} catch (e) {\n  throw new Error(`Gemini output was not valid JSON despite schema enforcement: ${e.message}`);\n}\n\nconst required = ['match_score', 'jd_specific_signals', 'tagline', 'profile', 'bullet_assignments', 'skill_candidates'];\nconst missing = required.filter(key => !(key in parsed));\nif (missing.length > 0) {\n  throw new Error(`AI output missing required field(s): ${missing.join(', ')}.`);\n}\n\nif (typeof parsed.match_score !== 'number' || parsed.match_score < 0 || parsed.match_score > 100) {\n  throw new Error(`match_score must be a number 0-100, got: ${JSON.stringify(parsed.match_score)}`);\n}\n\n// Output as plain, flat JSON -- everything downstream (the IF node's\n// condition, and Map AI Output And Pack Skills) reads directly off\n// $json.<field>, no further parsing needed.\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2608,
+        -688
+      ],
+      "id": "0dde861d-c1b5-4b48-b56a-e113115c5754",
+      "name": "Parse Gemini Selection Output"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Collect Bank Entries\"  [v6: merged with the former\n// \"Parse Bank MD\" node -- that node emitted one item per bullet/skill and\n// this node immediately collapsed them back into a single item, so the\n// two are combined here with no behavior change.]\n// Mode: Run Once for All Items\n// Place IMMEDIATELY after the Google Drive download of experience-bank.md.\n\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst mdText = buffer.toString('utf-8');\n\nconst lines = mdText.split('\\n');\n\nconst bankEntries = [];\nlet currentRole = null;\nlet bulletIndex = 0;\n\nfor (const rawLine of lines) {\n  const line = rawLine.trim();\n\n  const roleHeaderMatch = line.match(/^##\\s+(.+)$/);\n  if (roleHeaderMatch && !roleHeaderMatch[1].toLowerCase().includes('skills pool')) {\n    currentRole = roleHeaderMatch[1].trim();\n    bulletIndex = 0;\n    continue;\n  }\n\n  if (line.toLowerCase().includes('skills pool')) {\n    currentRole = '__SKILLS_POOL__';\n    continue;\n  }\n  if (currentRole === '__SKILLS_POOL__' && line.includes('|')) {\n    const skills = line.split('|').map(s => s.trim()).filter(Boolean);\n    skills.forEach((skill, idx) => {\n      bankEntries.push({\n        id: `skill-${idx}`,\n        type: 'skill',\n        role: null,\n        tags: [],\n        text: skill,\n      });\n    });\n    currentRole = null;\n    continue;\n  }\n\n  const bulletMatch = line.match(/^-\\s*\\[([^\\]]*)\\]\\s*(.+)$/);\n  if (bulletMatch && currentRole && currentRole !== '__SKILLS_POOL__') {\n    const tags = bulletMatch[1].split(',').map(t => t.trim()).filter(Boolean);\n    const text = bulletMatch[2].trim();\n    bulletIndex += 1;\n    const roleSlug = currentRole\n      .toLowerCase()\n      .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')\n      .replace(/[^a-z0-9]+/g, '-')\n      .replace(/(^-|-$)/g, '');\n    bankEntries.push({\n      id: `${roleSlug}-${bulletIndex}`,\n      type: 'bullet',\n      role: currentRole,\n      tags,\n      text,\n    });\n  }\n}\n\n// Fail loudly rather than silently returning an empty/partial array.\n// This parser expects THIS specific format:\n//   ## Skills Pool ... (one line, pipe-separated)\n//   ## Role Name (dates)\n//   - [tag1, tag2] Bullet text.\n// If the input file doesn't follow this structure, stop here with a\n// clear error instead of letting downstream nodes silently process\n// zero or wrong items.\nconst skillCount = bankEntries.filter(e => e.type === 'skill').length;\nconst bulletCount = bankEntries.filter(e => e.type === 'bullet').length;\n\nif (skillCount === 0) {\n  throw new Error(\n    `Parser found 0 skills. Expected a \"## Skills Pool\" section with a ` +\n    `pipe-separated line underneath. Check the source file matches the ` +\n    `expected experience-bank.md format.`\n  );\n}\nif (bulletCount === 0) {\n  throw new Error(\n    `Parser found 0 bullets. Expected \"## Role Name (dates)\" headers ` +\n    `followed by \"- [tag1, tag2] text\" lines. Check the source file ` +\n    `matches the expected experience-bank.md format.`\n  );\n}\n\nreturn [{\n  json: {\n    bank_entries: bankEntries,\n    entry_count: bankEntries.length,\n    skill_count: skillCount,\n    bullet_count: bulletCount,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3824,
+        -1216
+      ],
+      "id": "619d2ded-3439-4bba-9b5e-068edd8efcf9",
+      "name": "Collect Bank Entries"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_JOB_TRACKER_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Job",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TRACKER_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1873416187,
+          "mode": "list",
+          "cachedResultName": "Claude Search",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TRACKER_SHEET_ID/edit#gid=1873416187"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Waiting For Action",
+            "Position": "={{ $('Extract Job Details').item.json.title }}",
+            "Company": "={{ $('Extract Job Details').item.json.company }}",
+            "Link": "={{ $('Extract Job Details').item.json.apply_url }}",
+            "Score": "={{ $('Parse Gemini Selection Output').item.json.match_score }}",
+            "Extract_date": "={{ $now.format('M/dd/yyyy') }}",
+            "CV": "={{ $json.webViewLink }}",
+            "Latex_code": "={{ $('Parse And Fill Template').item.json.tailored_tex }}"
+          },
+          "matchingColumns": [
+            "Link"
+          ],
+          "schema": [
+            {
+              "id": "Position",
+              "displayName": "Position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Extract_date",
+              "displayName": "Extract_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Applied _date",
+              "displayName": "Applied _date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Stage",
+              "displayName": "Stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Stage 2",
+              "displayName": "Stage 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "info",
+              "displayName": "info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CV",
+              "displayName": "CV",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Questions",
+              "displayName": "Questions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Latex_code",
+              "displayName": "Latex_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -608,
+        -688
+      ],
+      "id": "1f0a6f4d-8d38-43d4-9499-b99af7ba2713",
+      "name": "Send Info To Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "={{ $('Check Compile Result').item.binary.data }}",
+        "name": "={{ $json.result.document.file_name }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_CV_DRIVE_FOLDER_ID",
+          "mode": "list",
+          "cachedResultName": "Claude_CVs",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_CV_DRIVE_FOLDER_ID"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -800,
+        -688
+      ],
+      "id": "349954aa-8fc9-4808-9cc3-5f4f3e3d3686",
+      "name": "Upload CV To Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Dedup Job Links\"  [NEW 2026-07-11]\n// Mode: Run Once for All Items\n// Wire: Split Out -> Dedup Job Links -> Loop Over Items\n//\n// Multi-page fetching (see Build LinkedIn Search URL) makes within-run\n// duplicates newly possible -- LinkedIn's result ordering can shift\n// slightly between page requests in the same run, occasionally returning\n// the same posting on two different pages. This is a SEPARATE problem\n// from cross-run duplicates (fixed by switching \"Send Info To Sheet\" to\n// Append or Update, matched on Link) -- this node only guards against\n// duplicates within a single run's own page fetches, before anything\n// reaches the tailoring loop at all. Doing it here also saves a wasted\n// Gemini call on a job you'd already have tailored earlier in the same run.\n\nconst seen = new Set();\nconst deduped = [];\n\nfor (const item of $input.all()) {\n  const link = item.json.links;\n  if (!link) continue; // drop any item that came through with no link at all\n  if (seen.has(link)) continue;\n  seen.add(link);\n  deduped.push(item);\n}\n\nconsole.log(`[INFO] Dedup Job Links: ${$input.all().length} in, ${deduped.length} unique out.`);\n\nreturn deduped;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1824,
+        -1216
+      ],
+      "id": "b16d646a-196d-4366-8dce-6d29041eea79",
+      "name": "Dedup Job Links"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0634e265-aa20-47e8-849b-14c52f42840b",
+              "leftValue": "={{ $('Check Already Processed').item.json.isNotEmpty() }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -3408,
+        -688
+      ],
+      "id": "54543933-7130-4014-99df-b9b4ad4c5e80",
+      "name": "Not Already In Sheet?"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_JOB_TRACKER_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Job",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TRACKER_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1873416187,
+          "mode": "list",
+          "cachedResultName": "Claude Search",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TRACKER_SHEET_ID/edit#gid=1873416187"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Link",
+              "lookupValue": "={{$('Extract Job Details').item.json.apply_url}}"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3600,
+        -688
+      ],
+      "id": "c0e61eb3-749e-4e37-8929-68063c6f5421",
+      "name": "Check Already Processed",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 35
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2400,
+        -96
+      ],
+      "id": "e53b7f01-73ad-4b86-8d12-f17f07a65133",
+      "name": "Wait",
+      "webhookId": "8735445a-8000-4b24-94bf-aea28b9359d8"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5dac2614-4d9e-47db-b956-32729071e23b",
+              "leftValue": "={{ $json.give_up }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2608,
+        -96
+      ],
+      "id": "7a949b73-0ac0-4ce4-ae7c-64cd2e141a5d",
+      "name": "Give Up?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Log Failed Gemini Call\"  [UPDATED — now runs after\n// Check Retry Limit's \"give up\" branch, not directly off the raw error]\n// Mode: Run Once for Each Item\n// Wire: Check Retry Limit -> Give Up? (IF, true branch) -> this node\n//   -> \"Log Failed Gemini Call To Sheet\" (see chat for column mapping)\n//   -> Loop Over Items\n\nconst jobDetails = $('Extract Job Details').first().json;\nconst input = $input.first().json;\n\nreturn [{\n  json: {\n    status: 'FAILED - Gemini Error',\n    title: jobDetails?.title || 'unknown',\n    company: jobDetails?.company || 'unknown',\n    apply_url: jobDetails?.apply_url || 'unknown',\n    failed_at: new Date().toISOString(),\n    retries_attempted: input.manual_retry_count || 'unknown',\n    error_message: input.last_error_message || 'unknown',\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2400,
+        -272
+      ],
+      "id": "32651d0c-2d59-43d1-be2d-f1f34b10f6f0",
+      "name": "Log Failed Gemini Call"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Check Retry Limit\"  [NEW]\n// Mode: Run Once for Each Item\n// Wire: Call Gemini For Selection (ERROR output, index 1, after setting\n//       onError to \"Continue (using error output)\") -> this node\n//       -> \"Give Up?\" (IF node)\n//            True  -> Log Failed Gemini Call -> Loop Over Items\n//            False -> Wait (35s) -> back to Call Gemini For Selection\n//\n// Caps the manual retry loop -- without this, a sustained Gemini outage\n// would retry indefinitely with no escape hatch. Each pass through this\n// loop already costs up to ~25s of Call Gemini For Selection's own\n// built-in retryOnFail (5 tries x 5000ms) before it even reaches this\n// node, plus the 35s Wait -- so MAX_MANUAL_RETRIES=3 below means roughly\n// 3 x (~25s + 35s) =~ 3 minutes worst-case before a single job gives up,\n// not an unbounded hang.\n//\n// NOTE ON INPUT SHAPE: when an HTTP Request node's onError is set to\n// \"Continue (using error output)\", n8n generally preserves the node's\n// original input fields on the error-output item and adds an `error`\n// field describing what went wrong -- but the exact shape of that error\n// field can vary by n8n version/node type. This code tries a few\n// reasonable places to find a usable error message rather than assuming\n// one specific shape; worth checking a real failed execution's output\n// once to confirm which branch actually fires, and adjusting if needed.\n\nconst MAX_MANUAL_RETRIES = 3;\n\nconst input = $input.first().json;\n\nconst currentCount = input.manual_retry_count || 0;\nconst newCount = currentCount + 1;\n\n// Best-effort error message extraction -- see note above on shape uncertainty.\nconst errorMessage =\n  (typeof input.error === 'string' && input.error) ||\n  input.error?.message ||\n  input.error?.error?.message ||\n  JSON.stringify(input.error ?? 'Unknown error shape - inspect this item in a real execution').slice(0, 300);\n\nconst giveUp = newCount > MAX_MANUAL_RETRIES;\n\nreturn [{\n  json: {\n    ...input,\n    manual_retry_count: newCount,\n    give_up: giveUp,\n    last_error_message: errorMessage,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2800,
+        -96
+      ],
+      "id": "7ca802c1-f1f9-45e3-962c-05382e29430e",
+      "name": "Check Retry Limit",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node — \"Random Delay 15-25s\"\n// Mode: Run Once for Each Item\n// Place this INSIDE the per-job loop, before fetching each individual job\n// page -- gives a randomized pause so requests don't fire in an\n// obviously bot-like fixed-interval pattern.\n\nconst MIN_MS = 15000;\nconst MAX_MS = 25000;\nconst delayMs = Math.floor(Math.random() * (MAX_MS - MIN_MS + 1)) + MIN_MS;\n\nawait new Promise(resolve => setTimeout(resolve, delayMs));\n\nreturn $input.item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4208,
+        -688
+      ],
+      "id": "6a8e6579-dfce-44cc-b772-b3fae92264e4",
+      "name": "Random Delay 15-25s"
+    },
+    {
+      "parameters": {
+        "content": "## 1️⃣ Load Bank, Template & Config\nLoads your experience bank, CV template, and CV Generation Config (threshold, owner name, forced skills). Runs once per trigger.",
+        "height": 322,
+        "width": 1180,
+        "color": 4
+      },
+      "id": "98ae17d4-69e7-471a-b742-22c3400d6a88",
+      "name": "Section: Load Bank, Template & Config",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -4288,
+        -1376
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2️⃣ Search LinkedIn for Job Postings\nBuilds a paginated LinkedIn search from your target titles/filters, scrapes job links, and dedupes them.",
+        "height": 322,
+        "width": 1400,
+        "color": 4
+      },
+      "id": "8d8140fe-304b-45a8-8165-330c3d3271fb",
+      "name": "Section: Search LinkedIn for Job Postings",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3104,
+        -1376
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🔁 Per-Job Loop\nLoops through job links one at a time, looping back after each job (success, error, or skip) until all are done.",
+        "height": 322,
+        "width": 380,
+        "color": 6
+      },
+      "id": "05c3cb4b-129e-433d-9fb7-7b45221f63aa",
+      "name": "Section: Per-Job Loop Controller",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1696,
+        -1376
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3️⃣ Fetch Job & Skip Duplicates\nScrapes the job page; skips straight back to the loop if this job's link is already in the tracker Sheet.",
+        "height": 338,
+        "width": 1180,
+        "color": 5
+      },
+      "id": "754fdfc4-c96c-4190-9bf7-2b703f20718a",
+      "name": "Section: Fetch Job & Skip Duplicates",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -4288,
+        -848
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 4️⃣ AI Scoring & Content Selection\nGemini scores the fit and picks bullets/skills in one call. Jobs below the threshold are skipped.",
+        "height": 338,
+        "width": 800,
+        "color": 3
+      },
+      "id": "041948ca-82c9-4f00-8ea8-35ff6093a07d",
+      "name": "Section: AI Scoring & Content Selection",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3104,
+        -848
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## ⚠️ Gemini Retry / Backoff\nRetries a failed Gemini call with a 35s wait, up to 3 times, before logging the failure and moving on.",
+        "height": 610,
+        "width": 760,
+        "color": 2
+      },
+      "id": "ef308c6f-07af-499f-b782-dc7c586fcf79",
+      "name": "Section: Gemini Retry / Backoff",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2880,
+        -416
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 5️⃣ Build & Compile Tailored CV\nPacks the AI's picks into the LaTeX template and compiles to PDF via latex-api.",
+        "height": 338,
+        "width": 1200,
+        "color": 5
+      },
+      "id": "3c120bd1-65a9-4ab3-8caa-98944d8283f8",
+      "name": "Section: Build & Compile Tailored CV",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2304,
+        -848
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 6️⃣ Deliver Result\nSuccess: Telegram + Drive + tracker Sheet. Compile failure: error message with the compiler log (below).",
+        "height": 674,
+        "width": 780,
+        "color": 7
+      },
+      "id": "ec5fc5b0-b581-494e-b814-ba866a04af62",
+      "name": "Section: Deliver Result",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        -848
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 📋 V6 Changelog (vs. live V5)\n- **Fixed:** Log Failed Gemini Call never reconnected to the loop -- a job exhausting Gemini's retry budget used to hang the whole run.\n- **Merged** 3 single-hop nodes with no behavior change: Decode CV Template → Discover Placeholders; Parse Bank MD → Collect Bank Entries; Encode Tailored Tex → Parse And Fill Template.\n- **Genericized** for reuse: CV filename, the two forced \"skills line 3\" phrases, and the match-score rubric's domain wording now read from config (CV Generation Config node) instead of being hardcoded -- defaults reproduce this build's exact original output.\n- V5 (live, active) was **not modified**. This workflow is a separate, inactive copy for review.",
+        "height": 550,
+        "width": 1300
+      },
+      "id": "607feae1-4f3a-48ab-bc72-ed3e72b588c3",
+      "name": "V6 Changelog",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -4272,
+        -1968
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 📊 Run Summary\nFires once after all jobs finish; dumps the full array of per-job results collected along the way.",
+        "height": 290,
+        "width": 380,
+        "color": 6
+      },
+      "id": "027cb372-87c9-4725-91c2-b9af5015c050",
+      "name": "Section: Run Summary",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1696,
+        -1856
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Collect Bank Entries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Worth Tailoring?": {
+      "main": [
+        [
+          {
+            "node": "Map AI Output And Pack Skills",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download cv.tex": {
+      "main": [
+        [
+          {
+            "node": "Discover Placeholders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "latex-api /convert": {
+      "main": [
+        [
+          {
+            "node": "Check Compile Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch LinkedIn Search Page": {
+      "main": [
+        [
+          {
+            "node": "Extract Job Links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build LinkedIn Search URL": {
+      "main": [
+        [
+          {
+            "node": "Fetch LinkedIn Search Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Titles": {
+      "main": [
+        [
+          {
+            "node": "Build LinkedIn Search URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Job Links": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Dedup Job Links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "output collector",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Random Delay 15-25s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Individual Job Page": {
+      "main": [
+        [
+          {
+            "node": "Extract Job Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Job Details": {
+      "main": [
+        [
+          {
+            "node": "Check Already Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Applicant Count": {
+      "main": [
+        [
+          {
+            "node": "Format Bank For Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filters": {
+      "main": [
+        [
+          {
+            "node": "Read Titles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Compile Result": {
+      "main": [
+        [
+          {
+            "node": "Compile Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile Succeeded?": {
+      "main": [
+        [
+          {
+            "node": "Send Tailored CV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CV Generation Config": {
+      "main": [
+        [
+          {
+            "node": "Download cv.tex",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Tailored CV": {
+      "main": [
+        [
+          {
+            "node": "Upload CV To Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Error": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discover Placeholders": {
+      "main": [
+        [
+          {
+            "node": "Filters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse And Fill Template": {
+      "main": [
+        [
+          {
+            "node": "latex-api /convert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map AI Output And Pack Skills": {
+      "main": [
+        [
+          {
+            "node": "Collect For Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Gemini For Selection": {
+      "main": [
+        [
+          {
+            "node": "Parse Gemini Selection Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Retry Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect For Review": {
+      "main": [
+        [
+          {
+            "node": "Parse And Fill Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Bank For Prompt": {
+      "main": [
+        [
+          {
+            "node": "Call Gemini For Selection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Gemini Selection Output": {
+      "main": [
+        [
+          {
+            "node": "Worth Tailoring?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Bank Entries": {
+      "main": [
+        [
+          {
+            "node": "CV Generation Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Info To Sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload CV To Drive": {
+      "main": [
+        [
+          {
+            "node": "Send Info To Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dedup Job Links": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not Already In Sheet?": {
+      "main": [
+        [
+          {
+            "node": "Parse Applicant Count",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Already Processed": {
+      "main": [
+        [
+          {
+            "node": "Not Already In Sheet?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Call Gemini For Selection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Give Up?": {
+      "main": [
+        [
+          {
+            "node": "Log Failed Gemini Call",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Retry Limit": {
+      "main": [
+        [
+          {
+            "node": "Give Up?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Failed Gemini Call": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Random Delay 15-25s": {
+      "main": [
+        [
+          {
+            "node": "Fetch Individual Job Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f4a0540b-3c2a-419d-a77b-018f94ad3329",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fb031dc8cd3e3ce3f5a04e3a3e0c76d795821d7400ba7013c3aec4e4c131bac5"
+  },
+  "nodeGroups": [],
+  "id": "UetyOQDHNiTUKoCE",
+  "tags": []
+}

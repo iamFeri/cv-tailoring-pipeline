@@ -1,0 +1,127 @@
+% ============================================================
+% CV Template — placeholder-driven, for the n8n CV-tailoring pipeline
+% Custom article-based template, optimized for a clean 1-page fit
+% Compile with: xelatex cv.tex (fontspec requires xelatex, not pdflatex)
+% ============================================================
+\documentclass[10.5pt]{article}
+
+\usepackage[a4paper, top=0.9cm, bottom=0.9cm, left=1.3cm, right=1.3cm]{geometry}
+\usepackage{fontspec}
+% Liberation Sans is metric-compatible with Arial and widely available.
+% If you have Lato installed locally, swap the line below for:
+%   \setmainfont{Lato}[UprightFont=*-Regular, BoldFont=*-Bold, ItalicFont=*-Italic, BoldItalicFont=*-BoldItalicFont]
+\setmainfont{Liberation Sans}
+
+\usepackage{xcolor}
+\definecolor{navy}{HTML}{1F3864}
+\definecolor{gray}{HTML}{555555}
+\definecolor{darktext}{HTML}{222222}
+
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{paracol}
+\usepackage{ragged2e}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\color{darktext}
+
+% ---------- Section heading style ----------
+\titleformat{\section}
+  {\color{navy}\bfseries\fontsize{11.5}{13}\selectfont}
+  {}{0em}{}
+  [\vspace{3pt}{\color{navy}\titlerule[0.9pt]}]
+\titlespacing{\section}{0pt}{6pt}{7pt}
+
+% ---------- Tight bullet list ----------
+\setlist[itemize]{
+  leftmargin=11pt, itemsep=1pt, parsep=0pt, topsep=1pt,
+  label=\textcolor{navy}{\textbullet}
+}
+
+% ---------- Job entry helper ----------
+% \jobentry{Title}{Company, City}{Dates}
+\newcommand{\jobentry}[3]{%
+  \par\vspace{2.5pt}
+  \noindent
+  \begin{tabularx}{\linewidth}{@{}X r@{}}
+    \textbf{\fontsize{10.5}{12}\selectfont #1} & {\itshape\color{gray}\small #3} \\
+  \end{tabularx}
+  \par{\itshape\color{gray}\small #2}\par\vspace{0.5pt}
+}
+
+\begin{document}
+
+% ============== HEADER ==============
+% Replace with your own name, tagline is filled by the pipeline (<<TAGLINE>>),
+% and your own contact details below.
+{\fontsize{22}{24}\selectfont\bfseries YOUR NAME}\\[8pt]
+{\fontsize{12}{14}\selectfont\color{navy} <<TAGLINE>>}\\[7pt]
+{\small
+  \href{mailto:your.email@example.com}{your.email@example.com} \;|\; +1 234 567 8900 \;|\; Your City, Country\\
+  \href{https://linkedin.com/in/your-profile}{linkedin.com/in/your-profile}
+}
+
+\vspace{7pt}
+{\color{navy}\hrule height 1.1pt}
+\vspace{5pt}
+
+% ============== PROFILE ==============
+\section{Profile}
+\RaggedRight\small
+<<PROFILE>>
+
+% ============== SKILLS ==============
+\section{Skills}
+\begingroup
+\centering\small
+<<SKILLS_LINE_1:117>>\\[2pt]
+<<SKILLS_LINE_2:117>>\\[2pt]
+<<SKILLS_LINE_3:117>>\par
+\endgroup
+
+% ============== EXPERIENCE ==============
+% Add one \jobentry{Title}{Company}{Dates} per role you want the pipeline to
+% tailor. Placeholder count per role (ROLE<N>_BULLET<M>) must match how many
+% bullets that role actually needs — the Discover Placeholders node reads
+% this directly from the template, nothing to configure elsewhere.
+\section{Professional Experience}
+
+\jobentry{Your Job Title}{Company A}{MM/YYYY -- MM/YYYY}
+\begin{itemize}
+  \item <<ROLE1_BULLET1>>
+  \item <<ROLE1_BULLET2>>
+  \item <<ROLE1_BULLET3>>
+  \item <<ROLE1_BULLET4>>
+\end{itemize}
+
+\jobentry{Your Earlier Job Title}{Company B}{MM/YYYY -- MM/YYYY}
+\begin{itemize}
+  \item <<ROLE2_BULLET1>>
+  \item <<ROLE2_BULLET2>>
+  \item <<ROLE2_BULLET3>>
+\end{itemize}
+
+% ============== EDUCATION ==============
+\section{Education}
+\begin{tabularx}{\linewidth}{@{}X r@{}}
+  \textbf{Your Degree} & {\itshape\color{gray}\small MM/YYYY -- MM/YYYY} \\
+\end{tabularx}
+{\small Your University -- City}
+
+% ============== LANGUAGES ==============
+\section{Languages}
+\begingroup\centering\small
+Language One: Level \;|\; Language Two: Level\par
+\endgroup
+
+% ============== INTERESTS ==============
+\section{Interests}
+\begingroup\centering\small
+Interest One \;|\; Interest Two \;|\; Interest Three\par
+\endgroup
+
+\end{document}
