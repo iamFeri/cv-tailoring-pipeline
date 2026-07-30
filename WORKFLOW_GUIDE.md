@@ -1,21 +1,22 @@
 # Workflow Guide
 
 A complete, plain-language walkthrough of this pipeline — what it does, how each
-section works, and exactly what a new user needs to stand it up themselves. Written as
-source material for the LinkedIn content series (`D:\Projects\LinkedIn Activity\n8n-automation\`)
-as well as documentation in its own right: each `##` section below maps to one planned
-post (noted inline).
+section works, and exactly what a new user needs to stand it up themselves. Companion
+to [`TEACHABLE_GUIDE.md`](./TEACHABLE_GUIDE.md) (the node-by-node reference): this file
+is the "why," that one is the "what do I set up."
 
-Ground truth for everything here: `PROJECT_PLAN.md`, `CHANGELOG.md`, `releases/v1..v6-notes.md`,
-`CLAUDE.md`, `README.md`, `experience-bank/experience-bank.md`, `templates/CV2_placeholders.tex`,
-`workflows/embed-experience-bank.json` (v6, current), and `latex-api/`. Where this guide notes a
-"doc vs. code discrepancy," that means the written docs and the live workflow file disagree —
-flagged explicitly rather than silently resolved one way, since it's genuinely interesting
+Ground truth for everything here: [`README.md`](./README.md),
+[`experience-bank/experience-bank.md`](./experience-bank/experience-bank.md),
+[`templates/CV2_placeholders.tex`](./templates/CV2_placeholders.tex),
+[`workflows/embed-experience-bank.json`](./workflows/embed-experience-bank.json) (v6,
+current), and [`latex-api/`](./latex-api/). Where this guide notes a "doc vs. code
+discrepancy," that means the written docs and the live workflow file disagree — flagged
+explicitly rather than silently resolved one way, since it's genuinely interesting
 material for a technical audience.
 
 ---
 
-## 1. The pipeline, end to end (→ Post 1 / Post 2 source)
+## 1. The pipeline, end to end
 
 Daily, unattended: scrape LinkedIn job postings → score each against a personal experience
 bank and tailor a CV in one AI call → render the result to PDF → deliver over Telegram,
@@ -59,7 +60,7 @@ no cached artifact that can go stale or bloat.
 
 ---
 
-## 2. What you need to build this yourself (→ Post 1 requirements list)
+## 2. What you need to build this yourself
 
 **Infrastructure**
 
@@ -72,8 +73,9 @@ no cached artifact that can go stale or bloat.
    compose stack, sharing a Docker network with n8n so the workflow can reach it at
    `http://latex-api:8000` by Docker-internal DNS. It is never exposed to the public
    internet — no `ports:` mapping.
-5. A reverse proxy (e.g. Caddy) in front of n8n for HTTPS — lives in a sibling `../VPS/`
-   workspace, not in this repo.
+5. A reverse proxy (e.g. Caddy) in front of n8n for HTTPS — standard n8n self-hosting
+   setup, not specific to this workflow; not included in this repo. See
+   [`latex-api/SETUP.md`](./latex-api/SETUP.md) for a from-zero VPS/Docker quickstart.
 
 **Accounts / API keys** (all referenced in the workflow by internal credential name —
 never inlined as raw secrets)
@@ -111,7 +113,7 @@ never inlined as raw secrets)
 
 ---
 
-## 3. Job search & scraping (→ Post 3 source)
+## 3. Job search & scraping
 
 *Workflow sections: "Search LinkedIn for Job Postings," "Fetch Job & Skip Duplicates."*
 
@@ -148,7 +150,7 @@ Indeed scraper hasn't been started.
 
 ---
 
-## 4. Scoring & tailoring (→ Post 4 source, part 1)
+## 4. Scoring & tailoring
 
 *Workflow section: "AI Scoring & Content Selection."*
 
@@ -199,7 +201,7 @@ above haven't been re-validated against a fresh batch yet. Both findings are sti
 
 ---
 
-## 5. Building & compiling the CV (→ Post 4 source, part 2)
+## 5. Building & compiling the CV
 
 *Workflow section: "Build & Compile Tailored CV."*
 
@@ -231,7 +233,7 @@ so bank and template can be edited independently without a hard-coupling break.
 
 ---
 
-## 6. Delivery, tracking & results (→ Post 5 source)
+## 6. Delivery, tracking & results
 
 *Workflow section: "Deliver Result," plus the run-summary/diagnostic layer.*
 
@@ -265,25 +267,15 @@ project already hit once."
 
 1. `cv_tailor_threshold` (currently `30`) — untested placeholder on the current AI
    self-assessed 0–100 scale; the old value was calibrated for a completely different
-   (cosine-similarity-gap) formula that no longer exists.
+   (cosine-similarity-gap) formula that no longer exists. Recalibrate against your own
+   bank/JD volume once you have real runs to look at.
 2. JD-specific signal detection underperforms on international-scope language — fixed once,
    not yet re-validated.
-3. Bullet-selection convergence — same ~9 bullets picked almost every run; 5 real bullets
-   never picked once in a 10-job audit. Open question: bank composition or model bias.
-4. Applicant count is captured but nothing filters on it.
-5. Indeed scraper not started (ToS risk accepted, ~30/day target).
-6. Secrets audit of workflow exports not done; LinkedIn session cookie (from a past
-   exposure) still needs moving into a proper credential — though note the current scraper
-   doesn't actually use a cookie at all (§3).
-7. One CV bullet's role title/label is unconfirmed as intentional vs. an authoring error.
-8. Two CV template variants disagree on whether one specific employment was one role or two
-   — held out of the repo until resolved.
-9. Bilingual/French CV output deferred, not rejected.
-10. Visual/design review of the tailored PDF deferred to end of project.
-
-**Doc-vs-code discrepancies worth using as content in their own right** — genuinely good
-"the map isn't the territory" material: `PROJECT_PLAN.md`'s prose still describes LinkedIn
-pagination as never built and the Gemini run-wide-halt risk as unaddressed; the live
-workflow already implements both (3-page pagination, and the full retry/backoff loop in §6)
-— the code moved on and the prose didn't get updated to match. A real, relatable example of
-documentation drift, not a gotcha to hide.
+3. Bullet-selection convergence — the same handful of bullets can get picked almost every
+   run, with some bank entries never selected. Open question: bank composition or model
+   bias — worth auditing against your own bank once you have several real runs.
+4. Applicant count is captured but nothing filters on it yet — a natural extension if you
+   want to deprioritize highly-competitive postings.
+5. Multi-language CV output (e.g. bilingual) is not supported — the prompt forces English
+   output regardless of the job posting's language (see rule 1 in
+   [`TEACHABLE_GUIDE.md`](./TEACHABLE_GUIDE.md#5-ai-scoring--content-selection)).

@@ -8,6 +8,49 @@ LaTeX-as-a-service API. It runs as one more container alongside n8n on the
 same VPS, reachable only over the internal Docker network — it is never
 exposed to the public internet.
 
+## Quickstart (start here if you have nothing set up yet)
+
+Skip to [Deployment](#deployment-docker-compose-service-block) below if you
+already run self-hosted n8n via Docker Compose — you just need to add the
+`latex-api` service block to your existing stack.
+
+Starting from zero (no VPS, no Docker, no n8n running):
+
+1. **Get a VPS with SSH access.** Any provider works — this whole stack
+   (n8n + latex-api) runs comfortably on the smallest tier most providers
+   sell (this build uses a €4/month box). You need a fresh Ubuntu 22.04+
+   machine and root/sudo SSH access to it.
+2. **Install Docker Engine + the Docker Compose plugin** on the VPS. Follow
+   Docker's own install guide for your distro —
+   [docs.docker.com/engine/install](https://docs.docker.com/engine/install/)
+   — rather than a copied command list here, since exact commands drift
+   across Docker and Ubuntu versions.
+3. **Create a working directory on the VPS** (e.g. `~/stack/`) with a
+   `docker-compose.yml` combining n8n and this service — see
+   [Deployment](#deployment-docker-compose-service-block) below for the
+   exact block. Copy this repo's `latex-api/` folder into that same
+   directory, alongside the compose file (`~/stack/latex-api/Dockerfile`
+   etc.) — `build: ./latex-api` in the compose file expects it there.
+4. **Bring the stack up:** `docker compose up -d`, then `docker compose ps`
+   to confirm both containers report healthy.
+5. **Confirm latex-api is reachable from n8n** (not from your own machine —
+   it deliberately has no public port, see below):
+   `docker compose exec n8n curl -f http://latex-api:8000/health` should
+   return a 200 response from inside the n8n container. If it doesn't,
+   check both containers are on the same `networks:` entry (see
+   [Deployment](#deployment-docker-compose-service-block)) and re-check
+   `docker compose logs latex-api` for a build/startup error.
+6. **Expose n8n itself** behind a reverse proxy with HTTPS (Caddy is the
+   simplest option for automatic certificates) if you want to reach the n8n
+   editor from outside the VPS — that part is standard n8n self-hosting,
+   not specific to this workflow: see
+   [n8n's own hosting docs](https://docs.n8n.io/hosting/). `latex-api`
+   itself never needs a public route.
+
+Once the stack is up and `latex-api/health` responds, continue in
+`TEACHABLE_GUIDE.md` for the workflow-specific setup (Google/Telegram
+credentials, importing `workflows/embed-experience-bank.json`).
+
 ## Why it's built this way
 
 - **Targeted `apt` install instead of `texlive/texlive:latest`.** The full

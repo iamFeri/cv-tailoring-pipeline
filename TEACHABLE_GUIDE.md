@@ -1,14 +1,21 @@
 # Teachable Build Guide
 
-Node-by-node setup instructions for rebuilding this workflow from scratch. Extracted
-directly from the live workflow (`Embed-Experience-Bank V6`, n8n workflow ID
-`UetyOQDHNiTUKoCE`, 2026-07-30) via n8n-mcp — not summarized from memory or from
-`WORKFLOW_GUIDE.md`. Every parameter value, expression, and code block below is copied
-from the actual node configuration.
+Node-by-node reference for the workflow you import from
+[`workflows/embed-experience-bank.json`](./workflows/embed-experience-bank.json) — you
+don't need to rebuild anything by hand; import the JSON first (see the main
+[`README.md`](./README.md#getting-started)), then use this file to understand what each
+node does, what every credential/ID placeholder needs to point to, and where the one
+customizable block in the tailoring prompt lives. Extracted directly from the live
+workflow (`Embed-Experience-Bank V6`, n8n workflow ID `UetyOQDHNiTUKoCE`, 2026-07-30) via
+n8n-mcp — not summarized from memory or from `WORKFLOW_GUIDE.md`. Every parameter value,
+expression, and code block below is copied from the actual node configuration, so it also
+works as a from-scratch reference if you'd rather type nodes in by hand than import.
 
 This file answers "what do I set up and how." For *why* a decision was made or what bug
-a rule is patching, see `WORKFLOW_GUIDE.md` instead — that's kept as a separate,
-narrative companion document, not duplicated here.
+a rule is patching, see [`WORKFLOW_GUIDE.md`](./WORKFLOW_GUIDE.md) instead — that's kept
+as a separate, narrative companion document, not duplicated here. For a full picture of
+the finished canvas before diving into per-node detail, see the screenshot in
+[`README.md`](./README.md#full-workflow-canvas).
 
 Sections below match the workflow canvas's own sticky-note groupings exactly (9 real
 sections). Two are single-node sections (Per-Job Loop Controller, Run Summary) — kept
@@ -639,8 +646,55 @@ outside it beyond pasting it in.
 
 Code (paste as-is):
 ```js
-// n8n Code node — "Format Bank For Prompt"
+// n8n Code node — "Format Bank For Prompt" (rev 3 — prompt genericized, see below)
 // Mode: Run Once for All Items
+
+// ── DOMAIN CUSTOMIZATION — edit this block for your own field, nothing else ──
+// SIGNAL_CATEGORIES: the checklist rule 4 below uses to find a JOB's most
+// specific requirements before falling back to generic skills. Each `hint`
+// is written field-agnostic on purpose -- swap in 2-3 examples from your
+// own field if you want sharper detection (e.g. for nursing: named clinical
+// systems/EHR software, named certifications like ACLS/BLS, patient
+// caseload/unit size). Leave the hints as-is and the categories still work,
+// just less sharply tuned to your field.
+const SIGNAL_CATEGORIES = [
+  {
+    label: 'Named industry or vertical',
+    hint: 'e.g. healthcare, manufacturing, education, finance, software -- ' +
+      'replace with verticals relevant to your own field',
+  },
+  {
+    label: 'Named tool, platform, system, or piece of equipment',
+    hint: 'e.g. a specific EHR system, CAD tool, CRM, programming language, ' +
+      'or piece of equipment -- replace with tools relevant to your own field',
+  },
+  {
+    label: 'Geographic or international/multinational scope',
+    hint: 'the words "international", "multinational", "global", a stated ' +
+      'number of countries/sites/locations, cross-border or multi-region ' +
+      'operations',
+  },
+  {
+    label: 'Named methodology, framework, certification, or standard',
+    hint: 'e.g. a clinical protocol, engineering standard, agile framework, ' +
+      'or professional certification -- replace with ones relevant to your ' +
+      'own field',
+  },
+  {
+    label: 'Scale, complexity, or seniority signals',
+    hint: 'e.g. team size, budget, caseload, project scope, deal size -- ' +
+      'replace with whichever scale signal matters most in your own field',
+  },
+];
+
+// TAGLINE_EXAMPLE_TITLES: 0-2 example job titles in your own field, shown to
+// the AI only to demonstrate the *shape* of a real title (length, phrasing)
+// -- never copied verbatim into output. Leave empty and the prompt falls
+// back to your own CV template's role titles (from experience-bank.md /
+// CV2_placeholders.tex) automatically, so this is optional polish, not a
+// required edit.
+const TAGLINE_EXAMPLE_TITLES = []; // e.g. ['ICU Charge Nurse', 'Registered Nurse']
+// ── end DOMAIN CUSTOMIZATION ──────────────────────────────────────────────
 
 const bankEntries = $('Collect Bank Entries').first().json.bank_entries;
 const roleSummary = $('Discover Placeholders').first().json.role_summary;
@@ -648,9 +702,14 @@ const roleSummary = $('Discover Placeholders').first().json.role_summary;
 const bulletEntries = bankEntries.filter(e => e.type === 'bullet');
 const skillEntries = bankEntries.filter(e => e.type === 'skill');
 
+// Derived generically from the bank's own role headers instead of a
+// hardcoded domain name -- keeps the rubric accurate for any bank, not
+// just a sales one.
 const bankDomainPhrase = [...new Set(bulletEntries.map(e => e.role).filter(Boolean))]
   .join(', ') || 'the BANK\'s professional background';
 
+// Plain-text bank listings the prompt references by [id] -- the AI must
+// select FROM these, never invent new bullet/skill text from scratch.
 const bulletBankText = bulletEntries
   .map(e => `[${e.id}] (${e.role}) ${e.text}`)
   .join('\n');
@@ -659,12 +718,32 @@ const skillBankText = skillEntries
   .map(e => `[${e.id}] ${e.text}`)
   .join('\n');
 
+// Plain-language description of each CV role slot, built from the
+// template's actual \jobentry{} calls (via Discover Placeholders) --
+// NOT from strict date-string matching, which is what made the old
+// cosine-similarity architecture brittle against template changes.
 const roleSlotsText = roleSummary
   .map(r => `ROLE${r.roleIndex}: "${r.title}" at ${r.company}, ${r.dates} -- needs ${r.bulletsNeeded} bullets (placeholders: ROLE${r.roleIndex}_BULLET1..${r.bulletsNeeded})`)
   .join('\n');
 
 const jobTitle = $('Extract Job Details').first().json.title || '';
 const jobDescription = $('Extract Job Details').first().json.description || '';
+
+// Rule 4's signal checklist, built from SIGNAL_CATEGORIES above.
+const signalCategoriesText = SIGNAL_CATEGORIES
+  .map((c, i) => `   ${String.fromCharCode(97 + i)}) ${c.label} (${c.hint}).`)
+  .join('\n');
+const categoryCountWord = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'][SIGNAL_CATEGORIES.length] || String(SIGNAL_CATEGORIES.length);
+
+// Rule 9's tagline examples: use TAGLINE_EXAMPLE_TITLES if set, else fall
+// back to the CV template's own role titles -- either way, no sales-domain
+// default leaks in.
+const taglineExamples = (TAGLINE_EXAMPLE_TITLES.length ? TAGLINE_EXAMPLE_TITLES : roleSummary.map(r => r.title))
+  .filter(Boolean)
+  .slice(0, 2);
+const taglineExampleText = taglineExamples.length
+  ? taglineExamples.map(t => `"${t}"`).join(', ')
+  : 'a real, concise job title in your field';
 
 const prompt = `You are selecting and rewording content for a CV to match a job posting,
 from a fixed bank of pre-approved, factual bullets and skills. You must
@@ -706,22 +785,10 @@ ${skillBankText}
    English per rule 1). Preserve every number and named entity exactly.
    Keep each bullet under ~110 characters.
 4. JD-SPECIFIC SIGNAL DETECTION: Before filling any skill slots with
-   general sales skills, independently check the JOB for EACH of these
-   signal categories -- check every category every time, do not stop
-   after finding one or two:
-   a) Named industry or vertical (e.g. industrial, manufacturing, SaaS,
-      logistics, retail, healthcare, hospitality).
-   b) Named tool, platform, or software (e.g. Salesforce, HubSpot, a
-      specific CRM or product name).
-   c) Geographic or international/multinational scope (e.g. the words
-      "international", "multinational", "global", a stated number of
-      countries, cross-border or multi-region operations). Treat this
-      category with the same weight as industry/vertical -- it has been
-      under-detected in the past.
-   d) Named sales methodology (e.g. MEDDIC, BANT, SPIN, ABM, Challenger,
-      Sales Navigator / social selling tools).
-   e) Deal size, deal complexity, or company-stage signals (e.g.
-      enterprise, SMB, startup, a stated deal-size range).
+   generic ${bankDomainPhrase} skills, independently check the JOB for
+   EACH of these signal categories -- check every category every time, do
+   not stop after finding one or two:
+${signalCategoriesText}
    For every category that is genuinely present in the JOB, record a short
    phrase describing it in \`jd_specific_signals\`, and select the single
    best-matching BANK skill for that signal if one exists in the SKILL
@@ -729,15 +796,14 @@ ${skillBankText}
    category is never a reason to skip checking another. If NO bank skill
    matches a genuinely-present signal, do not invent one (see rule 6) --
    just record the signal in \`jd_specific_signals\` with no matching skill.
-   Only after all five categories have been checked and their available
-   matches selected, fill any remaining skill slots with the most relevant
-   general sales skills. Do not let generic skills crowd out an available
+   Only after all ${categoryCountWord} categories have been checked and their
+   available matches selected, fill any remaining skill slots with the most
+   relevant general skills. Do not let generic skills crowd out an available
    specific match.
 5. Select 12-18 SKILL BANK entries most relevant to the JOB, avoiding two
    entries that express the same underlying concept (e.g. do not select
-   both "Account Management & Customer Success" and "Key Account
-   Management & Partnership Development" -- pick the one that fits better
-   and drop the other).
+   two skills that both describe the same responsibility in different
+   words -- pick the one that fits better and drop the other).
 6. You may reword a skill's phrasing, but you must NEVER add a tool,
    platform, brand, certification name, or any other concept, however
    plausible-sounding, that is not already present, verbatim or as a
@@ -758,26 +824,33 @@ ${skillBankText}
    at all, since lower-priority skills are the first to be dropped by the
    downstream character-budget packer.
 9. TAGLINE: exactly one job title or role name, 2-5 words, matching the
-   style of a real job title (e.g. "Senior Account Executive", "Business
-   Development Manager"). Do NOT write a descriptive sentence or clause.
-   NEVER use constructions like "specializing in...", "with expertise
-   in...", or any phrase joined by "and" describing two areas of work.
-   If unsure, default to the closest real job title implied by the JOB.
-   CONSERVATIVE BY DEFAULT: prefer the JOB posting's own title as closely
-   as possible -- do NOT add seniority modifiers ("Senior", "Lead",
-   "Strategic", etc.) or extra qualifiers ("Manager", "Specialist") that
-   are not present in the JOB's own title, even if they sound more
-   impressive or better match the BANK's bullets. Only deviate from the
-   JOB's exact title to expand a clear abbreviation (e.g. "BDR" ->
-   "Business Development Representative").
+   style of a real job title (e.g. ${taglineExampleText}). Do NOT write a
+   descriptive sentence or clause. NEVER use constructions like
+   "specializing in...", "with expertise in...", or any phrase joined by
+   "and" describing two areas of work. If unsure, default to the closest
+   real job title implied by the JOB. CONSERVATIVE BY DEFAULT: prefer the
+   JOB posting's own title as closely as possible -- do NOT add seniority
+   modifiers ("Senior", "Lead", "Principal", etc.) or extra qualifiers
+   ("Manager", "Specialist") that are not present in the JOB's own title,
+   even if they sound more impressive or better match the BANK's bullets.
+   Only deviate from the JOB's exact title to expand a clear abbreviation
+   present in it.
 10. PROFILE: 2-4 sentences using only claims supported by selected bullets.
    Do not restate facts already shown elsewhere on the CV (degree,
-   language fluency).
+   language fluency). CRITICAL: never repeat a SPECIFIC fact that already
+   appears in a selected bullet -- no numbers, percentages, dollar/budget
+   sizes, company names, or figures the bullets already state (the
+   recruiter will read both sections; restating a number is redundant,
+   not reinforcing). General, qualitative claims are fine as long as they
+   do not restate a bullet's specific figure or named entity -- e.g.
+   "experience managing large accounts" is fine, "grew accounts by 50%"
+   is not if a selected bullet already states that 50%.
 11. MATCH_SCORE: Judge how well this JOB matches the BANK as a whole and
    output it as \`match_score\`, an integer from 0-100. Use this rubric:
    - 80-100: The JOB's core function and most of its SPECIFIC requirements
      (named tools, methodologies, verticals) are genuinely represented in
-     the BANK.
+     the BANK -- e.g. a role closely matching ${bankDomainPhrase}, with
+     strong matching bullets and skills available.
    - 40-79: The JOB shares the same general professional domain as the
      BANK (${bankDomainPhrase}-adjacent, partially overlapping function)
      but is missing several specific/named requirements the BANK doesn't
@@ -786,10 +859,28 @@ ${skillBankText}
      BANK's background (${bankDomainPhrase}) -- e.g. a role in an unrelated
      profession with no meaningful skill overlap.
    Still complete bullet_assignments and skill_candidates FULLY and
-   normally regardless of the match_score value you assign.
+   normally regardless of the match_score value you assign -- do not
+   shorten, skip, or under-invest in content just because you judge the
+   score to be low. The score is used downstream to decide whether to use
+   your output at all; your job here is to produce it correctly either way.
 
 Return ONLY the requested JSON object -- no explanation, no markdown fences.`;
 
+// Native Gemini responseSchema -- enforced during generation, not parsed
+// after the fact. This is the property that makes Option B structurally
+// immune to the "Model output doesn't fit required format" failure seen
+// with the LangChain Structured Output Parser.
+//
+// jd_specific_signals is placed right after match_score, before the
+// content fields -- same trick as match_score itself: forcing the model
+// to commit to an explicit, inspectable list of what it thinks the JOB's
+// specific signals are BEFORE it selects skills, rather than leaving
+// signal-detection as implicit, unauditable reasoning. This also gives
+// a concrete diagnostic to check when auditing a run: if a real signal
+// (e.g. "international scope") is missing from this array entirely, the
+// miss is in detection; if it's present but no matching skill was
+// selected/ranked highly, the miss is in selection or ranking -- two
+// different problems that look identical without this field.
 const responseSchema = {
   type: 'object',
   properties: {
@@ -829,10 +920,13 @@ const responseSchema = {
 return [{ json: { prompt, responseSchema } }];
 ```
 
-Adapt the prompt and rubric wording to your own bank's domain — this build's rules
-(rule 4's categories, the `bankDomainPhrase` rubric) are written for a sales/business
-development background; the *mechanism* (fixed bank, schema enforcement, priority
-ranking) generalizes, the specific rule wording doesn't have to.
+The prompt is field-agnostic by default — `bankDomainPhrase` (rule 4, rule 11) is
+derived from your own bank's role headers, and the tagline examples (rule 9) fall back
+to your own CV template's role titles. Nothing needs editing to point this at a
+non-sales bank. If you want sharper JD-signal detection for your own field, edit the
+`SIGNAL_CATEGORIES` / `TAGLINE_EXAMPLE_TITLES` block near the top of the code — it's
+the one place in the file meant to be customized; the rest of the prompt-building logic
+doesn't need to change.
 
 ### Call Gemini For Selection (`n8n-nodes-base.httpRequest`)
 

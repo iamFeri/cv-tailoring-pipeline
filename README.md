@@ -19,23 +19,49 @@ and shown here as the loop itself). Every piece is a real sub-workflow you
 can inspect, edit, or swap out independently — that's the actual reason
 it's shown as connected Lego pieces instead of one wall of nodes.
 
+### Full workflow canvas
+
+<p align="center">
+  <img src="./assets/readme/full-canvas.png" width="100%" alt="The real n8n canvas: all 9 sections and every node, matching the sticky-note groupings TEACHABLE_GUIDE.md documents section by section.">
+</p>
+
+The diagram above is the simplified map; this is what it actually looks like
+wired up in n8n — every node, grouped into the same 9 sticky-note sections
+[`TEACHABLE_GUIDE.md`](./TEACHABLE_GUIDE.md) walks through one by one. Use
+it as the "what am I building toward" reference while working through that
+guide.
+
 ## Getting started
 
-1. **Read `TEACHABLE_GUIDE.md` first.** Node-by-node setup for all nine
-   sections — node types, exact settings, full prompt/schema text, every
-   code block, pasted as-is from the live workflow, not narrated.
+The fastest path to a running workflow is steps 2 and 4 below — the JSON
+already **is** the built workflow, you're not assembling it from scratch.
+[`TEACHABLE_GUIDE.md`](./TEACHABLE_GUIDE.md) (step 1) exists so you know
+what every node and credential does *after* importing it, and so you can
+customize the prompt/template for your own field with confidence — not as a
+literal from-scratch build sequence.
+
+1. **Read [`TEACHABLE_GUIDE.md`](./TEACHABLE_GUIDE.md).** Node-by-node
+   reference for all nine sections — node types, exact settings, full
+   prompt/schema text, every code block, pasted as-is from the live
+   workflow, not narrated. Start here to understand what you're importing
+   in step 4, and to find the one clearly-marked place to customize the
+   CV-tailoring prompt for your own field (not sales-specific — see
+   "Why it's built this way" below).
 2. **Fill in your own data:**
-   - `experience-bank/experience-bank.md` — replace the example entries with
-     your own real, verifiable work history.
-   - `templates/CV2_placeholders.tex` — replace the example header/education/
-     experience with your own.
+   - [`experience-bank/experience-bank.md`](./experience-bank/experience-bank.md)
+     — replace the example entries with your own real, verifiable work
+     history.
+   - [`templates/CV2_placeholders.tex`](./templates/CV2_placeholders.tex) —
+     replace the example header/education/experience with your own.
 3. **Stand up the infrastructure:** self-hosted n8n, a self-hosted service
-   that compiles LaTeX to PDF (`latex-api/` in this repo is a working
-   example), an LLM API on a free tier, Google Drive/Sheets access, a
-   Telegram bot.
-4. **Import `workflows/embed-experience-bank.json`** into your own n8n
-   instance and point every credential and file/sheet ID at your own —
-   they're placeholders in this export, not live values.
+   that compiles LaTeX to PDF ([`latex-api/`](./latex-api/) in this repo is
+   a working example — start at
+   [`latex-api/SETUP.md`](./latex-api/SETUP.md), which has a from-zero
+   quickstart if you don't have a VPS/Docker stack running yet), an LLM API
+   on a free tier, Google Drive/Sheets access, a Telegram bot.
+4. **Import [`workflows/embed-experience-bank.json`](./workflows/embed-experience-bank.json)**
+   into your own n8n instance and point every credential and file/sheet ID
+   at your own — they're placeholders in this export, not live values.
 
 ## Why it's built this way
 
@@ -51,8 +77,17 @@ up in practice:
   LaTeX.** Letting the model write the whole document caused repeated
   structural corruption; the model now only fills `<<TOKEN>>` placeholders
   in a template it can't otherwise break.
+- **The tailoring prompt is field-agnostic, not sales-specific.** The
+  scoring rubric and JD-signal categories derive from your own experience
+  bank's role headers at runtime — a bank of nursing, engineering, or
+  teaching roles gets scored and tailored against that field automatically,
+  no prompt rewrite required. See the `Format Bank For Prompt` node in
+  [`TEACHABLE_GUIDE.md`](./TEACHABLE_GUIDE.md#5-ai-scoring--content-selection)
+  for the one small, clearly-marked block you can optionally edit to
+  sharpen it further for your own field.
 
-Full bug-by-bug history behind individual prompt rules: `WORKFLOW_GUIDE.md`.
+Full bug-by-bug history behind individual prompt rules:
+[`WORKFLOW_GUIDE.md`](./WORKFLOW_GUIDE.md).
 
 ## Stack
 
@@ -60,20 +95,21 @@ Full bug-by-bug history behind individual prompt rules: `WORKFLOW_GUIDE.md`.
 - **Scoring + tailoring:** any LLM API on a free tier with schema-enforced
   JSON output (this build: Gemini)
 - **PDF generation:** a self-hosted LaTeX-compiling service (this build:
-  `latex-api/`, a small FastAPI service)
+  [`latex-api/`](./latex-api/), a small FastAPI service)
 - **Delivery/archiving:** Google Sheets (tracking/dedup), Google Drive
   (archive), Telegram (real-time delivery)
 
 ## Contents
 
-```
-TEACHABLE_GUIDE.md                     ← start here: node-by-node setup
-WORKFLOW_GUIDE.md                      ← the "why": decisions, bugs, history
-workflows/embed-experience-bank.json   ← the workflow, credentials/IDs scrubbed
-experience-bank/experience-bank.md     ← blank template, fill with your own data
-templates/CV2_placeholders.tex         ← blank CV template, fill with your own
-latex-api/                             ← working example PDF-compiler service
-```
+| Path | What it is |
+|---|---|
+| [`TEACHABLE_GUIDE.md`](./TEACHABLE_GUIDE.md) | Start here — node-by-node reference for the imported workflow |
+| [`WORKFLOW_GUIDE.md`](./WORKFLOW_GUIDE.md) | The "why" — decisions, bugs, history behind the current design |
+| [`workflows/embed-experience-bank.json`](./workflows/embed-experience-bank.json) | The workflow itself — import this; credentials/IDs are scrubbed placeholders |
+| [`experience-bank/experience-bank.md`](./experience-bank/experience-bank.md) | Blank template — fill with your own real work history |
+| [`templates/CV2_placeholders.tex`](./templates/CV2_placeholders.tex) | Blank CV template — fill with your own header/education/experience |
+| [`latex-api/`](./latex-api/) ([`SETUP.md`](./latex-api/SETUP.md)) | Working example PDF-compiler service, with a from-zero deployment quickstart |
+| [`assets/readme/full-canvas.png`](./assets/readme/full-canvas.png) | The real workflow canvas, all 9 sections, every node |
 
 ## Known open items
 
