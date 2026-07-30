@@ -425,7 +425,7 @@
             {
               "id": "b2f1a003-forced-skills-0003-00000000003",
               "name": "forced_skills_json",
-              "value": "=[\"AI Automation & Workflow Design (n8n, APIs)\",\"MS Suite (Excel), Google Workspace, Notion\"]",
+              "value": "=[]",
               "type": "string"
             }
           ]
