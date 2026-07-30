@@ -62,6 +62,16 @@ literal from-scratch build sequence.
    [`latex-api/SETUP.md`](./latex-api/SETUP.md), which has a from-zero
    quickstart if you don't have a VPS/Docker stack running yet), an LLM API
    on a free tier, Google Drive/Sheets access, a Telegram bot.
+   - Google Drive needs your filled-in `experience-bank.md` and CV template
+     uploaded to it (step 2) — the workflow reads them from there, not from
+     this repo.
+   - Google Sheets needs one spreadsheet built from
+     [`templates/job-search-sheet-template.xlsx`](./templates/job-search-sheet-template.xlsx)
+     (import it via *File → Import* in Google Sheets, or open it directly in
+     Excel first if you want to look before uploading). It has the three tabs
+     the workflow expects — `Titles`, `Filters`, `Result` — with the exact
+     column names already in place; the Sheets nodes reference columns by
+     name, so a hand-built sheet with different column names will fail.
 4. **Import [`workflows/embed-experience-bank.json`](./workflows/embed-experience-bank.json)**
    into your own n8n instance and point every credential and file/sheet ID
    at your own — they're placeholders in this export, not live values.
@@ -99,8 +109,9 @@ Full bug-by-bug history behind individual prompt rules:
   JSON output (this build: Gemini)
 - **PDF generation:** a self-hosted LaTeX-compiling service (this build:
   [`latex-api/`](./latex-api/), a small FastAPI service)
-- **Delivery/archiving:** Google Sheets (tracking/dedup), Google Drive
-  (archive), Telegram (real-time delivery)
+- **Delivery/archiving:** Google Sheets (tracking/dedup, one spreadsheet —
+  template: [`templates/job-search-sheet-template.xlsx`](./templates/job-search-sheet-template.xlsx)),
+  Google Drive (archive), Telegram (real-time delivery)
 
 ## Contents
 
@@ -111,6 +122,7 @@ Full bug-by-bug history behind individual prompt rules:
 | [`workflows/embed-experience-bank.json`](./workflows/embed-experience-bank.json) | The workflow itself — import this; credentials/IDs are scrubbed placeholders |
 | [`experience-bank/experience-bank.md`](./experience-bank/experience-bank.md) | Blank template — fill with your own real work history |
 | [`templates/CV2_placeholders.tex`](./templates/CV2_placeholders.tex) | Blank CV template — fill with your own header/education/experience |
+| [`templates/job-search-sheet-template.xlsx`](./templates/job-search-sheet-template.xlsx) | Blank Google Sheet template (3 tabs: Titles, Filters, Result) — import into Google Sheets, don't build one by hand |
 | [`latex-api/`](./latex-api/) ([`SETUP.md`](./latex-api/SETUP.md)) | Working example PDF-compiler service, with a from-zero deployment quickstart |
 | [`assets/readme/full-canvas.png`](./assets/readme/full-canvas.png) | The real workflow canvas, all 9 sections, every node |
 

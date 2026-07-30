@@ -20,7 +20,7 @@
         -1216
       ],
       "id": "7923dec6-2566-46e5-bf66-f435652c4108",
-      "name": "Download file",
+      "name": "Download Experience Bank",
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL_ID",
@@ -149,17 +149,15 @@
       "parameters": {
         "documentId": {
           "__rl": true,
-          "value": "YOUR_JOB_TITLES_SHEET_ID",
+          "value": "YOUR_JOB_SHEET_ID",
           "mode": "list",
-          "cachedResultName": "Job Titles for URL",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TITLES_SHEET_ID/edit?usp=drivesdk"
+          "cachedResultName": "Job Search — Titles, Filters & Results",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_SHEET_ID/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Titles",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TITLES_SHEET_ID/edit#gid=0"
+          "value": "Titles",
+          "mode": "name"
         },
         "options": {}
       },
@@ -305,17 +303,15 @@
       "parameters": {
         "documentId": {
           "__rl": true,
-          "value": "YOUR_JOB_TITLES_SHEET_ID",
+          "value": "YOUR_JOB_SHEET_ID",
           "mode": "list",
-          "cachedResultName": "Job Titles for URL",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TITLES_SHEET_ID/edit?usp=drivesdk"
+          "cachedResultName": "Job Search — Titles, Filters & Results",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_SHEET_ID/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
-          "value": 99112621,
-          "mode": "list",
-          "cachedResultName": "Settings",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TITLES_SHEET_ID/edit#gid=99112621"
+          "value": "Filters",
+          "mode": "name"
         },
         "options": {}
       },
@@ -620,17 +616,15 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "YOUR_JOB_TRACKER_SHEET_ID",
+          "value": "YOUR_JOB_SHEET_ID",
           "mode": "list",
-          "cachedResultName": "Job",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TRACKER_SHEET_ID/edit?usp=drivesdk"
+          "cachedResultName": "Job Search — Titles, Filters & Results",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_SHEET_ID/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
-          "value": 1873416187,
-          "mode": "list",
-          "cachedResultName": "Claude Search",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TRACKER_SHEET_ID/edit#gid=1873416187"
+          "value": "Result",
+          "mode": "name"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -881,17 +875,15 @@
       "parameters": {
         "documentId": {
           "__rl": true,
-          "value": "YOUR_JOB_TRACKER_SHEET_ID",
+          "value": "YOUR_JOB_SHEET_ID",
           "mode": "list",
-          "cachedResultName": "Job",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TRACKER_SHEET_ID/edit?usp=drivesdk"
+          "cachedResultName": "Job Search — Titles, Filters & Results",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_SHEET_ID/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
-          "value": 1873416187,
-          "mode": "list",
-          "cachedResultName": "Claude Search",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_JOB_TRACKER_SHEET_ID/edit#gid=1873416187"
+          "value": "Result",
+          "mode": "name"
         },
         "filtersUI": {
           "values": [
@@ -1012,7 +1004,7 @@
     },
     {
       "parameters": {
-        "content": "## 1️⃣ Load Bank, Template & Config\nLoads your experience bank, CV template, and CV Generation Config (threshold, owner name). Runs once per trigger.",
+        "content": "## 1️⃣ Load Bank, Template & Config\nLoads your experience bank, CV template, and CV Generation Config (threshold, owner name). Runs once per trigger.\n\n**Before running:** replace [experience-bank.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/experience-bank/experience-bank.md) and the [CV template](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/templates/CV2_placeholders.tex) with your own data, and set `cv_owner_name` in the CV Generation Config node below. Details: [TEACHABLE_GUIDE.md §1](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/TEACHABLE_GUIDE.md#1-load-bank-template--config).",
         "height": 322,
         "width": 1180,
         "color": 4
@@ -1076,7 +1068,7 @@
     },
     {
       "parameters": {
-        "content": "## 4️⃣ AI Scoring & Content Selection\nGemini scores the fit and picks bullets/skills in one call. Jobs below the threshold are skipped.",
+        "content": "## 4️⃣ AI Scoring & Content Selection\nGemini scores the fit and picks bullets/skills in one call. Jobs below the threshold are skipped.\n\n**Works for any field, not just tech/sales** — the prompt (`Format Bank For Prompt` node) reads its domain language from your own bank automatically, no rewrite needed. Want sharper matching for your field? Edit the `SIGNAL_CATEGORIES` block at the top of that node's code — the one place meant to be customized. Details: [TEACHABLE_GUIDE.md §5](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/TEACHABLE_GUIDE.md#5-ai-scoring--content-selection).",
         "height": 338,
         "width": 800,
         "color": 3
@@ -1140,21 +1132,6 @@
     },
     {
       "parameters": {
-        "content": "## 📋 V6 Changelog (vs. live V5)\n- **Fixed:** Log Failed Gemini Call never reconnected to the loop -- a job exhausting Gemini's retry budget used to hang the whole run.\n- **Merged** 3 single-hop nodes with no behavior change: Decode CV Template → Discover Placeholders; Parse Bank MD → Collect Bank Entries; Encode Tailored Tex → Parse And Fill Template.\n- **Genericized** for reuse: CV filename owner name and the match-score rubric's domain wording now read from config/the bank itself instead of being hardcoded. (A forced-skills-line constant that shipped in an earlier public revision was removed entirely, not genericized -- it forced this build's own skills onto every user's CV regardless of field.)\n- V5 (live, active) was **not modified**. This workflow is a separate, inactive copy for review.",
-        "height": 550,
-        "width": 1300
-      },
-      "id": "607feae1-4f3a-48ab-bc72-ed3e72b588c3",
-      "name": "V6 Changelog",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -4272,
-        -1968
-      ]
-    },
-    {
-      "parameters": {
         "content": "## 📊 Run Summary\nFires once after all jobs finish; dumps the full array of per-job results collected along the way.",
         "height": 290,
         "width": 380,
@@ -1168,11 +1145,27 @@
         -1696,
         -1856
       ]
+    },
+    {
+      "parameters": {
+        "content": "## 🚀 START HERE\nEvery credential, file/sheet ID, and prompt example below is a placeholder — this canvas will not run until you fill them in.\n\n**Full setup steps:** [README.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/README.md#getting-started)  \n**Every node explained:** [TEACHABLE_GUIDE.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/TEACHABLE_GUIDE.md)\n\n**Works for any profession** — not just tech/sales. You only need to:\n1. Put your own work history in [experience-bank.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/experience-bank/experience-bank.md) and your CV in the [LaTeX template](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/templates/CV2_placeholders.tex).\n2. Point every credential and file/sheet ID node at your own accounts.\n\nThe AI prompt in the 🔴 *AI Scoring & Content Selection* section adapts to your bank automatically — see that section's note for the one optional customization.",
+        "height": 420,
+        "width": 1300,
+        "color": 4
+      },
+      "id": "a1b2c3d4-start-here-0000-000000000001",
+      "name": "START HERE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -4272,
+        -2450
+      ]
     }
   ],
   "pinData": {},
   "connections": {
-    "Download file": {
+    "Download Experience Bank": {
       "main": [
         [
           {
@@ -1373,7 +1366,7 @@
       "main": [
         [
           {
-            "node": "Download file",
+            "node": "Download Experience Bank",
             "type": "main",
             "index": 0
           }

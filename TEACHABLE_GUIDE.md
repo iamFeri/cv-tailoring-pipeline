@@ -45,7 +45,7 @@ Setup:
 - Trigger rule: Interval, `triggerAtHour: 10` (runs once daily at 10:00, instance
   timezone).
 
-### Download file (`n8n-nodes-base.googleDrive`)
+### Download Experience Bank (`n8n-nodes-base.googleDrive`)
 
 Downloads the experience-bank markdown file as binary data.
 
@@ -299,8 +299,18 @@ Reads your global search filters (one row of settings, not one row per job).
 
 Setup:
 - Operation: Read rows.
-- Document/Sheet: a "Settings" tab in your tracker spreadsheet with columns:
-  `location`, `experience_level`, `remote`, `job_type`, `easy_apply`.
+- Document: your copy of
+  [`templates/job-search-sheet-template.xlsx`](./templates/job-search-sheet-template.xlsx)
+  (import it into Google Sheets via *File → Import*, or build your own with a matching
+  tab/column layout — see below).
+- Sheet: the `Filters` tab (referenced **By Name**, not by gid, so this keeps working
+  after you make your own copy) — one settings row with columns: `location`,
+  `experience_level`, `remote`, `job_type`, `easy_apply`. Valid values for the mapped
+  columns: `experience_level` ∈ {Internship, Entry level, Associate, Mid-Senior level,
+  Director, Executive}, `remote` ∈ {On-Site, Remote, Hybrid}, `job_type` ∈ {Full-time,
+  Part-time, Contract, Temporary, Other, Internship} — any of these may be
+  comma-separated to match more than one. `location` is free text; `easy_apply` is
+  `TRUE`/`FALSE`.
 - Set **Execute Once** on (it should only read the settings row once, not per item).
 - Credential: a Google Sheets OAuth2 credential.
 
@@ -310,7 +320,9 @@ Reads your list of target job titles, one row per title, column named `title`.
 
 Setup:
 - Operation: Read rows.
-- Document/Sheet: a "Titles" tab in the same or a separate spreadsheet.
+- Document: the same spreadsheet as `Filters` above (your copy of
+  `job-search-sheet-template.xlsx`).
+- Sheet: the `Titles` tab (**By Name**) — one column, `title`, one job title per row.
 - Credential: same Google Sheets credential.
 
 ### Build LinkedIn Search URL (`n8n-nodes-base.code`)
@@ -576,7 +588,9 @@ Looks up this job's URL in your tracker sheet to see if it's already been handle
 
 Setup:
 - Operation: Read rows (with a filter, first match only).
-- Document/Sheet: your job tracker spreadsheet.
+- Document: the same spreadsheet as `Titles`/`Filters` above.
+- Sheet: the `Result` tab (**By Name**) — see `Send Info To Sheet` below for its
+  required columns.
 - Filter: column `Link` equals `={{ $('Extract Job Details').item.json.apply_url }}`.
 - **Always Output Data**: on (so the IF node below always gets an item to check,
   even on zero matches).
@@ -1473,7 +1487,12 @@ every run, including the full filled `.tex` source for audit.
 Setup:
 - Operation: Append (or Update, matching on `Link`, so re-runs update rather than
   duplicate).
-- Document/Sheet: your tracker spreadsheet.
+- Document: the same spreadsheet as `Titles`/`Filters` above.
+- Sheet: the `Result` tab (**By Name**) — headers must be exactly `Status`,
+  `Position`, `Company`, `Link`, `Score`, `Extract_date`, `CV`, `Latex_code` (this is
+  what [`templates/job-search-sheet-template.xlsx`](./templates/job-search-sheet-template.xlsx)
+  ships pre-filled with; a hand-built sheet with different/missing column names will
+  fail here since these are referenced by name, not position).
 - Columns to map: `Status` (constant, e.g. `"Waiting For Action"`), `Company`,
   `Link` (this is the match column), `Score`, `Extract_date`, `CV` (Drive
   `webViewLink` from the previous node's output), `Latex_code` (the filled `.tex`

@@ -84,8 +84,9 @@ never inlined as raw secrets)
    credential, calling `gemini-2.5-flash:generateContent`.
 7. **Google account with Drive access** — stores/serves the experience bank file and CV
    template, and receives every generated CV PDF.
-8. **Google account with Sheets access** — two spreadsheets: one holding target job titles
-   + search filters, one acting as the dedup/tracker log that successful runs append to.
+8. **Google account with Sheets access** — one spreadsheet, three tabs: target job
+   titles, search filters, and the dedup/tracker log that successful runs append to.
+   Template: [`templates/job-search-sheet-template.xlsx`](./templates/job-search-sheet-template.xlsx).
 9. **A Telegram bot** (via BotFather) — delivers each tailored CV as a document, or an
    error message with the compile log on failure.
 10. **No LinkedIn account needed.** The scraper is deliberately cookie-free (LinkedIn's
