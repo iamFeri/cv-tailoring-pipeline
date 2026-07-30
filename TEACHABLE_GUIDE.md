@@ -682,8 +682,9 @@ const SIGNAL_CATEGORIES = [
   },
   {
     label: 'Scale, complexity, or seniority signals',
-    hint: 'e.g. team size, budget, caseload, project scope, deal size -- ' +
-      'replace with whichever scale signal matters most in your own field',
+    hint: 'e.g. team size, budget, caseload, project scope, transaction ' +
+      'volume -- replace with whichever scale signal matters most in your ' +
+      'own field',
   },
 ];
 
@@ -843,8 +844,8 @@ ${signalCategoriesText}
    recruiter will read both sections; restating a number is redundant,
    not reinforcing). General, qualitative claims are fine as long as they
    do not restate a bullet's specific figure or named entity -- e.g.
-   "experience managing large accounts" is fine, "grew accounts by 50%"
-   is not if a selected bullet already states that 50%.
+   "experience improving operational efficiency" is fine, "improved
+   efficiency by 50%" is not if a selected bullet already states that 50%.
 11. MATCH_SCORE: Judge how well this JOB matches the BANK as a whole and
    output it as \`match_score\`, an integer from 0-100. Use this rubric:
    - 80-100: The JOB's core function and most of its SPECIFIC requirements
