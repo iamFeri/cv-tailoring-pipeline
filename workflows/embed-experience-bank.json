@@ -1004,8 +1004,8 @@
     },
     {
       "parameters": {
-        "content": "## 1️⃣ Load Bank, Template & Config\nLoads your experience bank, CV template, and CV Generation Config (threshold, owner name). Runs once per trigger.\n\n**Before running:** replace [experience-bank.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/experience-bank/experience-bank.md) and the [CV template](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/templates/CV2_placeholders.tex) with your own data, and set `cv_owner_name` in the CV Generation Config node below. Details: [TEACHABLE_GUIDE.md §1](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/TEACHABLE_GUIDE.md#1-load-bank-template--config).",
-        "height": 322,
+        "content": "## 1️⃣ Load Bank, Template & Config\nLoads your experience bank, CV template, and CV Generation Config (threshold, owner name). Runs once per trigger.\n\n**Before running:** replace [experience-bank.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/experience-bank/experience-bank.md) and the [CV template](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/templates/CV2_placeholders.tex) with your own data, and set `cv_owner_name` below. Details: [TEACHABLE_GUIDE.md §1](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/TEACHABLE_GUIDE.md#1-load-bank-template--config).",
+        "height": 460,
         "width": 1180,
         "color": 4
       },
@@ -1068,8 +1068,8 @@
     },
     {
       "parameters": {
-        "content": "## 4️⃣ AI Scoring & Content Selection\nGemini scores the fit and picks bullets/skills in one call. Jobs below the threshold are skipped.\n\n**Works for any field, not just tech/sales** — the prompt (`Format Bank For Prompt` node) reads its domain language from your own bank automatically, no rewrite needed. Want sharper matching for your field? Edit the `SIGNAL_CATEGORIES` block at the top of that node's code — the one place meant to be customized. Details: [TEACHABLE_GUIDE.md §5](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/TEACHABLE_GUIDE.md#5-ai-scoring--content-selection).",
-        "height": 338,
+        "content": "## 4️⃣ AI Scoring & Content Selection\nGemini scores the fit and picks bullets/skills in one call. Jobs below the threshold are skipped.\n\n**Works for any field** — the prompt auto-adapts to your bank, no rewrite needed. To sharpen it for your field, edit `SIGNAL_CATEGORIES` in the `Format Bank For Prompt` node below. Details: [TEACHABLE_GUIDE.md §5](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/TEACHABLE_GUIDE.md#5-ai-scoring--content-selection).",
+        "height": 410,
         "width": 800,
         "color": 3
       },
@@ -1148,8 +1148,8 @@
     },
     {
       "parameters": {
-        "content": "## 🚀 START HERE\nEvery credential, file/sheet ID, and prompt example below is a placeholder — this canvas will not run until you fill them in.\n\n**Full setup steps:** [README.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/README.md#getting-started)  \n**Every node explained:** [TEACHABLE_GUIDE.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/TEACHABLE_GUIDE.md)\n\n**Works for any profession** — not just tech/sales. You only need to:\n1. Put your own work history in [experience-bank.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/experience-bank/experience-bank.md) and your CV in the [LaTeX template](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/templates/CV2_placeholders.tex).\n2. Point every credential and file/sheet ID node at your own accounts.\n\nThe AI prompt in the 🔴 *AI Scoring & Content Selection* section adapts to your bank automatically — see that section's note for the one optional customization.",
-        "height": 420,
+        "content": "## 🚀 START HERE\nEvery credential, file/sheet ID, and prompt example below is a placeholder — this canvas will not run until you fill them in.\n\n**Setup steps:** [README.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/README.md#getting-started)  \n**Every node explained:** [TEACHABLE_GUIDE.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/TEACHABLE_GUIDE.md)\n\n**Works for any profession**, not just tech/sales:\n1. Your own data in [experience-bank.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/experience-bank/experience-bank.md) and the [CV template](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/templates/CV2_placeholders.tex).\n2. Your own credentials and file/sheet IDs on every node below.\n\nThe AI prompt (🔴 *AI Scoring* section) adapts to your bank automatically — see that section's note for the one optional tweak.",
+        "height": 560,
         "width": 1300,
         "color": 4
       },
