@@ -16,8 +16,8 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -4016,
-        -1216
+        -4032,
+        -1072
       ],
       "id": "7923dec6-2566-46e5-bf66-f435652c4108",
       "name": "Download Experience Bank",
@@ -55,8 +55,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -2400,
-        -688
+        -2416,
+        -608
       ],
       "id": "f4be9416-1e61-407e-800c-6265274dec21",
       "name": "Worth Tailoring?"
@@ -76,8 +76,8 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -3424,
-        -1216
+        -3440,
+        -1072
       ],
       "id": "cddd7577-7d7f-4b39-806f-8648cf25010b",
       "name": "Download cv.tex",
@@ -108,8 +108,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -1600,
-        -688
+        -1616,
+        -608
       ],
       "id": "331d7084-caf5-4a0d-a2f0-2f75706b6740",
       "name": "latex-api /convert",
@@ -126,8 +126,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -2416,
-        -1216
+        -2432,
+        -1072
       ],
       "id": "a81c781c-368f-44b5-a762-6068ed36a4d4",
       "name": "Fetch LinkedIn Search Page"
@@ -139,8 +139,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2624,
-        -1216
+        -2640,
+        -1072
       ],
       "id": "48ffdf00-1c27-4436-a020-dce14763ede4",
       "name": "Build LinkedIn Search URL"
@@ -164,8 +164,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        -2816,
-        -1216
+        -2832,
+        -1072
       ],
       "id": "f928194a-5ea6-4468-896d-32b90ff02304",
       "name": "Read Titles",
@@ -195,8 +195,8 @@
       "type": "n8n-nodes-base.html",
       "typeVersion": 1.2,
       "position": [
-        -2224,
-        -1216
+        -2240,
+        -1072
       ],
       "id": "0f860b26-e20c-4d4d-a84f-53f8689d02ae",
       "name": "Extract Job Links"
@@ -209,8 +209,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        -2016,
-        -1216
+        -2032,
+        -1072
       ],
       "id": "2853c039-adef-40a3-bd72-2be79c264ecd",
       "name": "Split Out"
@@ -222,8 +222,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -1616,
-        -1216
+        -1392,
+        -1072
       ],
       "id": "e09725a3-bd42-48d5-8d89-33a3b7694d75",
       "name": "Loop Over Items"
@@ -236,8 +236,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -4000,
-        -688
+        -4016,
+        -608
       ],
       "id": "1f67dad5-09da-4b37-8e73-ec8e578aba4b",
       "name": "Fetch Individual Job Page"
@@ -280,8 +280,8 @@
       "type": "n8n-nodes-base.html",
       "typeVersion": 1.2,
       "position": [
-        -3808,
-        -688
+        -3824,
+        -608
       ],
       "id": "ebaca07f-8bf4-418a-b093-1a8ef2975ccd",
       "name": "Extract Job Details"
@@ -293,8 +293,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -3200,
-        -688
+        -3216,
+        -608
       ],
       "id": "c59bcf78-1bf9-44ce-a24e-310b2b8934d1",
       "name": "Parse Applicant Count"
@@ -318,8 +318,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        -3024,
-        -1216
+        -3040,
+        -1072
       ],
       "id": "522ea533-bdf0-4c0c-9944-dc0bf0d6737b",
       "name": "Filters",
@@ -338,8 +338,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1408,
-        -688
+        -1424,
+        -608
       ],
       "id": "bbf0a3e9-26e2-4601-af9d-c36356f8650b",
       "name": "Check Compile Result"
@@ -371,8 +371,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1200,
-        -688
+        -1216,
+        -608
       ],
       "id": "7d6ca51b-1e9b-4fa8-959b-1a0c549f9134",
       "name": "Compile Succeeded?"
@@ -390,8 +390,8 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        -4224,
-        -1216
+        -4240,
+        -1072
       ],
       "id": "305ad271-1055-4699-b130-c37be5657e12",
       "name": "Schedule Trigger"
@@ -419,8 +419,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -3616,
-        -1216
+        -3632,
+        -1072
       ],
       "id": "eaec7b43-7d1e-4cd1-b2aa-62b055a2d5bf",
       "name": "CV Generation Config"
@@ -439,8 +439,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -1008,
-        -688
+        -1024,
+        -608
       ],
       "id": "3bdb46c1-ab3e-4dcd-b473-c87f6ac29e9e",
       "name": "Send Tailored CV",
@@ -464,7 +464,7 @@
       "typeVersion": 1.2,
       "position": [
         -1008,
-        -416
+        -384
       ],
       "id": "bd773208-5c0b-44e9-99c3-6288a7f0bcd0",
       "name": "Send Error",
@@ -483,8 +483,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -3216,
-        -1216
+        -3232,
+        -1072
       ],
       "id": "ed2db8f9-82f2-4a54-87bf-b77903e18b05",
       "name": "Discover Placeholders"
@@ -496,8 +496,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1808,
-        -688
+        -1824,
+        -608
       ],
       "id": "ece99b5f-6eba-447e-913b-30032844ba58",
       "name": "Parse And Fill Template"
@@ -509,8 +509,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2208,
-        -688
+        -2224,
+        -608
       ],
       "id": "b1bd4bea-9859-4da4-95d1-f52637559e6a",
       "name": "Map AI Output And Pack Skills"
@@ -522,8 +522,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1488,
-        -1696
+        -1248,
+        -1552
       ],
       "id": "0cb9b6eb-1616-4461-a18e-8e54b5ee85bb",
       "name": "output collector"
@@ -542,8 +542,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -2800,
-        -688
+        -2816,
+        -608
       ],
       "id": "0d6121dc-0872-4fb3-ba98-ac9a428d5f18",
       "name": "Call Gemini For Selection",
@@ -566,8 +566,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2000,
-        -688
+        -2016,
+        -608
       ],
       "id": "7c9e81cc-031b-456a-8dd3-7cd7d5f24f3c",
       "name": "Collect For Review"
@@ -579,8 +579,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -3008,
-        -688
+        -3024,
+        -608
       ],
       "id": "898a63b5-dcab-46c1-8ff1-229b5f20128b",
       "name": "Format Bank For Prompt"
@@ -592,21 +592,21 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2608,
-        -688
+        -2624,
+        -608
       ],
       "id": "0dde861d-c1b5-4b48-b56a-e113115c5754",
       "name": "Parse Gemini Selection Output"
     },
     {
       "parameters": {
-        "jsCode": "// n8n Code node — \"Collect Bank Entries\"  [v6: merged with the former\n// \"Parse Bank MD\" node -- that node emitted one item per bullet/skill and\n// this node immediately collapsed them back into a single item, so the\n// two are combined here with no behavior change.]\n// Mode: Run Once for All Items\n// Place IMMEDIATELY after the Google Drive download of experience-bank.md.\n\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst mdText = buffer.toString('utf-8');\n\nconst lines = mdText.split('\\n');\n\nconst bankEntries = [];\nlet currentRole = null;\nlet bulletIndex = 0;\n\nfor (const rawLine of lines) {\n  const line = rawLine.trim();\n\n  const roleHeaderMatch = line.match(/^##\\s+(.+)$/);\n  if (roleHeaderMatch && !roleHeaderMatch[1].toLowerCase().includes('skills pool')) {\n    currentRole = roleHeaderMatch[1].trim();\n    bulletIndex = 0;\n    continue;\n  }\n\n  if (line.toLowerCase().includes('skills pool')) {\n    currentRole = '__SKILLS_POOL__';\n    continue;\n  }\n  if (currentRole === '__SKILLS_POOL__' && line.includes('|')) {\n    const skills = line.split('|').map(s => s.trim()).filter(Boolean);\n    skills.forEach((skill, idx) => {\n      bankEntries.push({\n        id: `skill-${idx}`,\n        type: 'skill',\n        role: null,\n        tags: [],\n        text: skill,\n      });\n    });\n    currentRole = null;\n    continue;\n  }\n\n  const bulletMatch = line.match(/^-\\s*\\[([^\\]]*)\\]\\s*(.+)$/);\n  if (bulletMatch && currentRole && currentRole !== '__SKILLS_POOL__') {\n    const tags = bulletMatch[1].split(',').map(t => t.trim()).filter(Boolean);\n    const text = bulletMatch[2].trim();\n    bulletIndex += 1;\n    const roleSlug = currentRole\n      .toLowerCase()\n      .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')\n      .replace(/[^a-z0-9]+/g, '-')\n      .replace(/(^-|-$)/g, '');\n    bankEntries.push({\n      id: `${roleSlug}-${bulletIndex}`,\n      type: 'bullet',\n      role: currentRole,\n      tags,\n      text,\n    });\n  }\n}\n\n// Fail loudly rather than silently returning an empty/partial array.\n// This parser expects THIS specific format:\n//   ## Skills Pool ... (one line, pipe-separated)\n//   ## Role Name (dates)\n//   - [tag1, tag2] Bullet text.\n// If the input file doesn't follow this structure, stop here with a\n// clear error instead of letting downstream nodes silently process\n// zero or wrong items.\nconst skillCount = bankEntries.filter(e => e.type === 'skill').length;\nconst bulletCount = bankEntries.filter(e => e.type === 'bullet').length;\n\nif (skillCount === 0) {\n  throw new Error(\n    `Parser found 0 skills. Expected a \"## Skills Pool\" section with a ` +\n    `pipe-separated line underneath. Check the source file matches the ` +\n    `expected experience-bank.md format.`\n  );\n}\nif (bulletCount === 0) {\n  throw new Error(\n    `Parser found 0 bullets. Expected \"## Role Name (dates)\" headers ` +\n    `followed by \"- [tag1, tag2] text\" lines. Check the source file ` +\n    `matches the expected experience-bank.md format.`\n  );\n}\n\nreturn [{\n  json: {\n    bank_entries: bankEntries,\n    entry_count: bankEntries.length,\n    skill_count: skillCount,\n    bullet_count: bulletCount,\n  },\n}];"
+        "jsCode": "// n8n Code node — \"Collect Bank Entries\"  [v6: merged with the former\n// \"Parse Bank MD\" node -- that node emitted one item per bullet/skill and\n// this node immediately collapsed them back into a single item, so the\n// two are combined here with no behavior change.]\n// Mode: Run Once for All Items\n// Place IMMEDIATELY after the Google Drive download of experience-bank.md.\n\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst mdText = buffer.toString('utf-8');\n\nconst lines = mdText.split('\\n');\n\nconst bankEntries = [];\nlet currentRole = null;\nlet bulletIndex = 0;\n\nfor (const rawLine of lines) {\n  const line = rawLine.trim();\n\n  const roleHeaderMatch = line.match(/^##\\s+(.+)$/);\n  if (roleHeaderMatch && !roleHeaderMatch[1].toLowerCase().includes('skills pool')) {\n    currentRole = roleHeaderMatch[1].trim();\n    bulletIndex = 0;\n    continue;\n  }\n\n  if (line.toLowerCase().includes('skills pool')) {\n    currentRole = '__SKILLS_POOL__';\n    continue;\n  }\n  if (currentRole === '__SKILLS_POOL__' && line.includes('|')) {\n    const skills = line.split('|').map(s => s.trim()).filter(Boolean);\n    skills.forEach((skill, idx) => {\n      bankEntries.push({\n        id: `skill-${idx}`,\n        type: 'skill',\n        role: null,\n        tags: [],\n        text: skill,\n      });\n    });\n    currentRole = null;\n    continue;\n  }\n\n  const bulletMatch = line.match(/^-\\s*\\[([^\\]]*)\\]\\s*(.+)$/);\n  if (bulletMatch && currentRole && currentRole !== '__SKILLS_POOL__') {\n    const tags = bulletMatch[1].split(',').map(t => t.trim()).filter(Boolean);\n    const text = bulletMatch[2].trim();\n    bulletIndex += 1;\n    const roleSlug = currentRole\n      .toLowerCase()\n      .normalize('NFD').replace(/[̀-ͯ]/g, '')\n      .replace(/[^a-z0-9]+/g, '-')\n      .replace(/(^-|-$)/g, '');\n    bankEntries.push({\n      id: `${roleSlug}-${bulletIndex}`,\n      type: 'bullet',\n      role: currentRole,\n      tags,\n      text,\n    });\n  }\n}\n\n// Fail loudly rather than silently returning an empty/partial array.\n// This parser expects THIS specific format:\n//   ## Skills Pool ... (one line, pipe-separated)\n//   ## Role Name (dates)\n//   - [tag1, tag2] Bullet text.\n// If the input file doesn't follow this structure, stop here with a\n// clear error instead of letting downstream nodes silently process\n// zero or wrong items.\nconst skillCount = bankEntries.filter(e => e.type === 'skill').length;\nconst bulletCount = bankEntries.filter(e => e.type === 'bullet').length;\n\nif (skillCount === 0) {\n  throw new Error(\n    `Parser found 0 skills. Expected a \"## Skills Pool\" section with a ` +\n    `pipe-separated line underneath. Check the source file matches the ` +\n    `expected experience-bank.md format.`\n  );\n}\nif (bulletCount === 0) {\n  throw new Error(\n    `Parser found 0 bullets. Expected \"## Role Name (dates)\" headers ` +\n    `followed by \"- [tag1, tag2] text\" lines. Check the source file ` +\n    `matches the expected experience-bank.md format.`\n  );\n}\n\nreturn [{\n  json: {\n    bank_entries: bankEntries,\n    entry_count: bankEntries.length,\n    skill_count: skillCount,\n    bullet_count: bulletCount,\n  },\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -3824,
-        -1216
+        -3840,
+        -1072
       ],
       "id": "619d2ded-3439-4bba-9b5e-068edd8efcf9",
       "name": "Collect Bank Entries"
@@ -777,8 +777,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        -608,
-        -688
+        -624,
+        -608
       ],
       "id": "1f0a6f4d-8d38-43d4-9499-b99af7ba2713",
       "name": "Send Info To Sheet",
@@ -811,8 +811,8 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -800,
-        -688
+        -816,
+        -608
       ],
       "id": "349954aa-8fc9-4808-9cc3-5f4f3e3d3686",
       "name": "Upload CV To Drive",
@@ -831,8 +831,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1824,
-        -1216
+        -1840,
+        -1072
       ],
       "id": "b16d646a-196d-4366-8dce-6d29041eea79",
       "name": "Dedup Job Links"
@@ -865,8 +865,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -3408,
-        -688
+        -3424,
+        -608
       ],
       "id": "54543933-7130-4014-99df-b9b4ad4c5e80",
       "name": "Not Already In Sheet?"
@@ -900,8 +900,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        -3600,
-        -688
+        -3616,
+        -608
       ],
       "id": "c0e61eb3-749e-4e37-8929-68063c6f5421",
       "name": "Check Already Processed",
@@ -996,8 +996,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -4208,
-        -688
+        -4224,
+        -608
       ],
       "id": "6a8e6579-dfce-44cc-b772-b3fae92264e4",
       "name": "Random Delay 15-25s"
@@ -1021,7 +1021,7 @@
     {
       "parameters": {
         "content": "## 2️⃣ Search LinkedIn for Job Postings\nBuilds a paginated LinkedIn search from your target titles/filters, scrapes job links, and dedupes them.",
-        "height": 322,
+        "height": 510,
         "width": 1400,
         "color": 4
       },
@@ -1037,7 +1037,7 @@
     {
       "parameters": {
         "content": "## 🔁 Per-Job Loop\nLoops through job links one at a time, looping back after each job (success, error, or skip) until all are done.",
-        "height": 322,
+        "height": 510,
         "width": 380,
         "color": 6
       },
@@ -1046,14 +1046,14 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1696,
+        -1456,
         -1376
       ]
     },
     {
       "parameters": {
         "content": "## 3️⃣ Fetch Job & Skip Duplicates\nScrapes the job page; skips straight back to the loop if this job's link is already in the tracker Sheet.",
-        "height": 338,
+        "height": 418,
         "width": 1180,
         "color": 5
       },
@@ -1069,7 +1069,7 @@
     {
       "parameters": {
         "content": "## 4️⃣ AI Scoring & Content Selection\nGemini scores the fit and picks bullets/skills in one call. Jobs below the threshold are skipped.\n\n**Works for any field** — the prompt auto-adapts to your bank, no rewrite needed.\nTo sharpen it for your field, edit `SIGNAL_CATEGORIES`\nin the `Format Bank For Prompt` node below.\nDetails: [TEACHABLE_GUIDE.md §5](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/TEACHABLE_GUIDE.md#5-ai-scoring--content-selection).",
-        "height": 415,
+        "height": 418,
         "width": 800,
         "color": 3
       },
@@ -1101,7 +1101,7 @@
     {
       "parameters": {
         "content": "## 5️⃣ Build & Compile Tailored CV\nPacks the AI's picks into the LaTeX template and compiles to PDF via latex-api.",
-        "height": 338,
+        "height": 418,
         "width": 1200,
         "color": 5
       },
@@ -1142,24 +1142,23 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1696,
-        -1856
+        -1456,
+        -1712
       ]
     },
     {
       "parameters": {
         "content": "## 🚀 START HERE\nEvery credential, file/sheet ID, and prompt example below is a placeholder — this canvas will not run until you fill them in.\n\n**Setup steps:**\n[README.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/README.md#getting-started)\n\n**Every node explained:**\n[TEACHABLE_GUIDE.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/TEACHABLE_GUIDE.md)\n\n**Works for any profession**, not just tech/sales:\n1. Your own data in\n[experience-bank.md](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/experience-bank/experience-bank.md)\nand the\n[CV template](https://github.com/iamFeri/cv-tailoring-pipeline/blob/master/templates/CV2_placeholders.tex).\n2. Your own credentials and file/sheet IDs on every node below.\n\nThe AI prompt (🔴 *AI Scoring* section) adapts to your bank automatically — see that section's note for the one optional tweak.",
-        "height": 640,
-        "width": 1300,
-        "color": 4
+        "height": 480,
+        "width": 1172
       },
       "id": "a1b2c3d4-start-here-0000-000000000001",
       "name": "START HERE",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -4272,
-        -2450
+        -4288,
+        -1872
       ]
     }
   ],
@@ -1506,6 +1505,11 @@
         [
           {
             "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download Experience Bank",
             "type": "main",
             "index": 0
           }
