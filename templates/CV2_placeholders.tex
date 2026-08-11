@@ -42,15 +42,13 @@
   label=\textcolor{navy}{\textbullet}
 }
 
-% ---------- Job entry helper ----------
+% ---------- Job entry helper (ATS-SAFE: single-line title, no table, no bold/indent on company) ----------
 % \jobentry{Title}{Company, City}{Dates}
 \newcommand{\jobentry}[3]{%
   \par\vspace{2.5pt}
   \noindent
-  \begin{tabularx}{\linewidth}{@{}X r@{}}
-    \textbf{\fontsize{10.5}{12}\selectfont #1} & {\itshape\color{gray}\small #3} \\
-  \end{tabularx}
-  \par{\itshape\color{gray}\small #2}\par\vspace{0.5pt}
+  {\bfseries\fontsize{10.5}{12}\selectfont #1}\par
+  {\itshape\color{gray}\small #2}\hfill{\itshape\color{gray}\small #3}\par\vspace{0.5pt}
 }
 
 \begin{document}
