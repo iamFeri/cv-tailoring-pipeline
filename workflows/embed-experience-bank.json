@@ -174,7 +174,9 @@
           "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
           "name": "Google Sheets account"
         }
-      }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
     },
     {
       "parameters": {
@@ -329,7 +331,9 @@
           "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
           "name": "Google Sheets account"
         }
-      }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
     },
     {
       "parameters": {
